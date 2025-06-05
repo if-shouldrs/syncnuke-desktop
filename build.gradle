@@ -1,0 +1,43 @@
+plugins {
+    id 'java'
+}
+
+group = 'io.github.syncnuke'
+version = '1.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // SyncNuke Core (assumes it's already built and available locally or published)
+    implementation project(':syncnuke-core')
+
+    // Jackson
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
+
+    // SLF4J
+    implementation 'org.slf4j:slf4j-api:2.0.17'
+
+    // Tinylog
+    implementation 'org.tinylog:tinylog-impl:2.7.0'
+    implementation 'org.tinylog:slf4j-tinylog:2.7.0'
+
+    // junixsocket (pom packaging is not relevant in Gradle)
+    implementation 'com.kohlschutter.junixsocket:junixsocket-core:2.10.1'
+
+    // Command Line Parser
+    implementation 'commons-cli:commons-cli:1.9.0'
+}
