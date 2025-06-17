@@ -95,6 +95,12 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
     }
 
     @Override
+    public double getPlaybackSpeed() {
+        JsonNode r = getProperty("speed");
+        return r != null && r.isNumber() ? r.asDouble(1.0) : 1.0;
+    }
+
+    @Override
     public boolean isPaused() {
         JsonNode r = getProperty("pause");
         return r != null && r.isBoolean() && r.asBoolean();
