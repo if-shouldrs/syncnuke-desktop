@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.syncnuke.service.TimingService;
+import io.github.syncnuke.service.TimingServiceImpl;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.newsclub.net.unix.AFUNIXSocket;
@@ -25,6 +27,7 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
     private final AFUNIXSocket socket;
     private final BufferedWriter writer;
     private final BufferedReader reader;
+    private final TimingService timingService = new TimingServiceImpl();
     private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "mpv-ipc-listener");
         t.setDaemon(true);
@@ -33,12 +36,6 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
 
     private final ExecutorService listenerExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "mpv-event-dispatch");
-        t.setDaemon(true);
-        return t;
-    });
-
-    private final ScheduledExecutorService keepAliveExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "mpv-keep-alive");
         t.setDaemon(true);
         return t;
     });
@@ -287,7 +284,7 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
     }
 
     private void startKeepAlivePings() {
-        keepAliveExecutor.scheduleAtFixedRate(() -> {
+        timingService.schedule(() -> {
             try {
                 getProperty("pause");
             } catch (Exception e) {
@@ -299,8 +296,8 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
     @Override
     public void close() {
         try {
-            keepAliveExecutor.shutdownNow();
             listenerExecutor.shutdownNow();
+            timingService.shutdown();
             socket.shutdownOutput();
             socket.shutdownInput();
             writer.close();
