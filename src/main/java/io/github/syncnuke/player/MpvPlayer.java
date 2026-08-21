@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.syncnuke.player.data.PlaybackState;
+import io.github.syncnuke.player.data.PlayerState;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.newsclub.net.unix.AFUNIXSocket;
@@ -16,7 +18,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
-public final class MpvPlayer implements VideoPlayer, AutoCloseable {
+public final class MpvPlayer implements VideoPlayer {
 
     private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -31,19 +33,11 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
         return t;
     });
 
-    private final ExecutorService listenerExecutor = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "mpv-event-dispatch");
-        t.setDaemon(true);
-        return t;
-    });
-
     private final ScheduledExecutorService keepAliveExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "mpv-keep-alive");
         t.setDaemon(true);
         return t;
     });
-
-    private volatile VideoPlayerEventListener eventListener;
 
     public MpvPlayer(@NonNull String socketPath) throws IOException {
         File sockFile = new File(socketPath);
@@ -59,15 +53,9 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
         this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
         this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 
-        startAsyncEventPump();
-        subscribeDefaultEvents();
+        startResponsePump();
         startKeepAlivePings();
         log.info("Connected to MPV IPC at {}", socketPath);
-    }
-
-    @Override
-    public void setEventListener(VideoPlayerEventListener listener) {
-        this.eventListener = listener;
     }
 
     @Override
@@ -89,21 +77,37 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
     }
 
     @Override
-    public double getPosition() {
-        JsonNode r = getProperty("time-pos");
-        return r != null && r.isNumber() ? r.asDouble() : 0.0;
+    public PlayerState getStatus() {
+        PlayerState status = new PlayerState();
+        status.setPlaybackState(isPaused() ? PlaybackState.PAUSED : PlaybackState.PLAYING);
+        status.setPosition(getPosition());
+        status.setPlaybackSpeed(getPlaybackSpeed());
+        status.setLastUpdateTime(System.currentTimeMillis());
+        return status;
     }
 
-    @Override
-    public double getPlaybackSpeed() {
-        JsonNode r = getProperty("speed");
-        return r != null && r.isNumber() ? r.asDouble(1.0) : 1.0;
+    private double getPosition() {
+        JsonNode value = getProperty("time-pos");
+        if (value == null || !value.isNumber()) {
+            throw new IllegalStateException("MPV returned an invalid time-pos value");
+        }
+        return value.asDouble();
     }
 
-    @Override
-    public boolean isPaused() {
-        JsonNode r = getProperty("pause");
-        return r != null && r.isBoolean() && r.asBoolean();
+    private double getPlaybackSpeed() {
+        JsonNode value = getProperty("speed");
+        if (value == null || !value.isNumber()) {
+            throw new IllegalStateException("MPV returned an invalid speed value");
+        }
+        return value.asDouble();
+    }
+
+    private boolean isPaused() {
+        JsonNode value = getProperty("pause");
+        if (value == null || !value.isBoolean()) {
+            throw new IllegalStateException("MPV returned an invalid pause value");
+        }
+        return value.asBoolean();
     }
 
     @Override
@@ -159,7 +163,7 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
         sendRaw(msg);
     }
 
-    private void sendRaw(JsonNode obj) {
+    private synchronized void sendRaw(JsonNode obj) {
         try {
             String json = MAPPER.writeValueAsString(obj);
             writer.write(json);
@@ -170,17 +174,17 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
         }
     }
 
-    /* -------- asynchronous event pump -------------- */
+    /* -------- asynchronous response pump -------------- */
 
     private final ConcurrentMap<Integer, CompletableFuture<JsonNode>> pendingReplies = new ConcurrentHashMap<>();
 
-    private void startAsyncEventPump() {
+    private void startResponsePump() {
         ioExecutor.submit(() -> {
             String line;
             try {
                 while ((line = reader.readLine()) != null) {
                     if (line.isBlank()) continue;
-                    log.debug("Received raw event from MPV: {}", line);
+                    log.debug("Received raw response from MPV: {}", line);
                     JsonNode node = MAPPER.readTree(line);
 
                     if (node.has("request_id")) {
@@ -195,95 +199,13 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
                             continue;
                         }
                     }
-
-                    /* ---- 2) async events ------------ */
-                    if (node.has("event")) {
-                        log.debug("Processing MPV event: {}", node.get("event").asText());
-                        handleEvent(node);
-                    }
                 }
             } catch (IOException e) {
-                log.error("Event pump stopped due to IOException: {}", e.getMessage(), e);
+                log.error("Response pump stopped due to IOException: {}", e.getMessage(), e);
             } catch (Exception e) {
-                log.error("Unexpected error in event pump: {}", e.getMessage(), e);
+                log.error("Unexpected error in response pump: {}", e.getMessage(), e);
             }
         });
-    }
-
-    private void subscribeDefaultEvents() {
-        observeProperty(1, "pause");
-        observeProperty(2, "time-pos");
-        observeProperty(3, "seek");
-        log.info("Subscribed to default MPV events: pause, time-pos, seek");
-    }
-
-    private void observeProperty(int id, String property) {
-        sendCommand(MAPPER.createArrayNode()
-                .add("observe_property")
-                .add(id)
-                .add(property));
-    }
-
-    private void handleEvent(JsonNode node) {
-        String evt = node.get("event").asText();
-        if ("property-change".equals(evt)) {
-            String name = node.path("name").asText();
-            JsonNode data = node.get("data");
-            if ("pause".equals(name)) {
-                if (data != null && data.isBoolean()) {
-                    boolean paused = data.asBoolean(false);
-                    log.debug("Pause property changed: {}", paused);
-                    if (eventListener != null) {
-                        listenerExecutor.submit(() -> {
-                            onPause(paused);
-                        });
-                    }
-                } else {
-                    log.warn("Pause property change event received with null or invalid data");
-                }
-            } else if ("time-pos".equals(name)) {
-                if (data != null && data.isNumber()) {
-                    double pos = data.asDouble();
-                    log.debug("Time position changed: {}", pos);
-                    if (eventListener != null) {
-                        listenerExecutor.submit(() -> onSeek(pos));
-                    }
-                } else {
-                    log.warn("Time position change event received with null or invalid data");
-                }
-            } else if ("seek".equals(name)) {
-                log.debug("Seek event detected");
-                if (eventListener != null) {
-                    listenerExecutor.submit(() -> {
-                        double position = getPosition();
-                        onSeek(position);
-                    });
-                }
-            } else {
-                log.warn("Unknown property change event: {}", name);
-            }
-        }
-    }
-
-    private void onSeek(double position) {
-        // Slight delay to ensure seek operations don't eat the pause status
-        CompletableFuture.runAsync(() -> {
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException ie) {
-                log.error("Thread interrupted during sleep", ie);
-                Thread.currentThread().interrupt();
-            }
-            eventListener.onSeek(position);
-        });
-    }
-
-    private void onPause(boolean paused) {
-        if (paused) {
-            eventListener.onPause();
-        } else {
-            eventListener.onPlay();
-        }
     }
 
     private void startKeepAlivePings() {
@@ -300,7 +222,6 @@ public final class MpvPlayer implements VideoPlayer, AutoCloseable {
     public void close() {
         try {
             keepAliveExecutor.shutdownNow();
-            listenerExecutor.shutdownNow();
             socket.shutdownOutput();
             socket.shutdownInput();
             writer.close();

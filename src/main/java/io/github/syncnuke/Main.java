@@ -1,11 +1,11 @@
 package io.github.syncnuke;
 
+import io.github.syncnuke.player.PlayerManager;
 import lombok.Data;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import io.github.syncnuke.client.SyncManager;
 import io.github.syncnuke.player.MpvPlayer;
-import io.github.syncnuke.player.VideoPlayer;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -28,7 +28,7 @@ public class Main {
         Environment env = parseArguments(args);
         CountDownLatch latch = new CountDownLatch(1);
 
-        try (VideoPlayer videoPlayer = getVideoPlayer()) {
+        try (PlayerManager videoPlayer = getVideoPlayer()) {
 
             startSyncClient(env, videoPlayer);
             videoPlayer.load(env.getFilePath());
@@ -44,7 +44,7 @@ public class Main {
         }
     }
 
-    private static void startSyncClient(Environment env, VideoPlayer videoPlayer) {
+    private static void startSyncClient(Environment env, PlayerManager videoPlayer) {
         SyncManager syncManager = SyncManager.getInstance(videoPlayer);
         syncManager.start(
                 env.getProtocol(),
@@ -55,9 +55,12 @@ public class Main {
         );
     }
 
-    private static VideoPlayer getVideoPlayer() throws IOException {
+    @SuppressWarnings("resource")
+    private static PlayerManager getVideoPlayer() throws IOException {
         String socketPath = System.getProperty("user.home") + "/.mpv-ipc/mpvsocket";
-        return new MpvPlayer(socketPath);
+        PlayerManager playerManager = PlayerManager.getInstance();
+        playerManager.start(new MpvPlayer(socketPath));
+        return playerManager;
     }
 
     private static Environment parseArguments(String[] args) {
