@@ -28,11 +28,6 @@ public final class MpvPlayer implements VideoPlayer {
     private final Closeable connection;
     private final BufferedWriter writer;
     private final BufferedReader reader;
-    private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "mpv-ipc-listener");
-        t.setDaemon(true);
-        return t;
-    });
 
     private final ScheduledExecutorService keepAliveExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "mpv-keep-alive");
@@ -46,7 +41,6 @@ public final class MpvPlayer implements VideoPlayer {
         this.writer = new BufferedWriter(new OutputStreamWriter(ipcConnection.output, StandardCharsets.UTF_8));
         this.reader = new BufferedReader(new InputStreamReader(ipcConnection.input, StandardCharsets.UTF_8));
 
-        startResponsePump();
         startKeepAlivePings();
         log.info("Connected to MPV IPC at {}", ipcPath);
     }
@@ -186,75 +180,40 @@ public final class MpvPlayer implements VideoPlayer {
                 .add(name));
     }
 
-    private JsonNode sendCommandForResult(ArrayNode command) {
+    private synchronized JsonNode sendCommandForResult(ArrayNode command) {
         int reqId = REQUEST_COUNTER.incrementAndGet();
         ObjectNode msg = MAPPER.createObjectNode()
                 .put("request_id", reqId)
                 .set("command", command);
 
-        CompletableFuture<JsonNode> answer = new CompletableFuture<>();
-        pendingReplies.put(reqId, answer);
-
-        sendRaw(msg);
-
         try {
-            return answer.get(READ_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException | TimeoutException | ExecutionException e) {
+            String json = MAPPER.writeValueAsString(msg);
+            writer.write(json);
+            writer.write('\n');
+            writer.flush();
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank()) continue;
+                log.debug("Received raw response from MPV: {}", line);
+                JsonNode node = MAPPER.readTree(line);
+
+                if (node.path("request_id").asInt() == reqId) {
+                    if (node.has("error") && !"success".equals(node.get("error").asText())) {
+                        throw new IOException("MPV error: " + node.get("error").asText());
+                    }
+                    return node.get("data");
+                }
+            }
+            throw new EOFException("MPV closed the IPC connection");
+        } catch (IOException e) {
             log.error("IPC request {} failed: {}", reqId, e.toString());
             return null;
-        } finally {
-            pendingReplies.remove(reqId);
         }
     }
 
     private void sendCommand(ArrayNode command) {
-        ObjectNode msg = MAPPER.createObjectNode().set("command", command);
-        sendRaw(msg);
-    }
-
-    private synchronized void sendRaw(JsonNode obj) {
-        try {
-            String json = MAPPER.writeValueAsString(obj);
-            writer.write(json);
-            writer.write('\n');
-            writer.flush();
-        } catch (IOException e) {
-            log.error("Failed to write to MPV socket: {}", e.toString());
-        }
-    }
-
-    /* -------- asynchronous response pump -------------- */
-
-    private final ConcurrentMap<Integer, CompletableFuture<JsonNode>> pendingReplies = new ConcurrentHashMap<>();
-
-    private void startResponsePump() {
-        ioExecutor.submit(() -> {
-            String line;
-            try {
-                while ((line = reader.readLine()) != null) {
-                    if (line.isBlank()) continue;
-                    log.debug("Received raw response from MPV: {}", line);
-                    JsonNode node = MAPPER.readTree(line);
-
-                    if (node.has("request_id")) {
-                        int id = node.path("request_id").asInt();
-                        CompletableFuture<JsonNode> cf = pendingReplies.get(id);
-                        if (cf != null) {
-                            if (node.has("error") && !"success".equals(node.get("error").asText())) {
-                                cf.completeExceptionally(new IOException("MPV error: " + node.get("error").asText()));
-                            } else {
-                                cf.complete(node.get("data"));
-                            }
-                            continue;
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                log.error("Response pump stopped due to IOException: {}", e.getMessage(), e);
-            } catch (Exception e) {
-                log.error("Unexpected error in response pump: {}", e.getMessage(), e);
-            }
-        });
+        sendCommandForResult(command);
     }
 
     private void startKeepAlivePings() {
@@ -270,7 +229,6 @@ public final class MpvPlayer implements VideoPlayer {
     @Override
     public void close() {
         keepAliveExecutor.shutdownNow();
-        ioExecutor.shutdownNow();
 
         try {
             writer.close();
