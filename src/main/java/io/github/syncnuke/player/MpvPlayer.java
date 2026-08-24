@@ -21,10 +21,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class MpvPlayer implements VideoPlayer {
 
     private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final AtomicInteger REQUEST_COUNTER = new AtomicInteger();
 
-    private final AFUNIXSocket socket;
+    private final Closeable connection;
     private final BufferedWriter writer;
     private final BufferedReader reader;
     private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor(r -> {
@@ -39,23 +40,71 @@ public final class MpvPlayer implements VideoPlayer {
         return t;
     });
 
-    public MpvPlayer(@NonNull String socketPath) throws IOException {
-        File sockFile = new File(socketPath);
-        if (!sockFile.exists()) {
-            throw new FileNotFoundException("Socket '" + socketPath + "' does not exist; did you launch mpv " +
-                    "with --input-ipc-server=" + socketPath + " ?");
-        }
-
-        this.socket = AFUNIXSocket.newInstance();
-        this.socket.connect(AFUNIXSocketAddress.of(sockFile));
-        this.socket.setSoTimeout((int) READ_TIMEOUT.toMillis());
-
-        this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-        this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+    public MpvPlayer(@NonNull String ipcPath) throws IOException {
+        IpcConnection ipcConnection = openIpcConnection(ipcPath);
+        this.connection = ipcConnection;
+        this.writer = new BufferedWriter(new OutputStreamWriter(ipcConnection.output, StandardCharsets.UTF_8));
+        this.reader = new BufferedReader(new InputStreamReader(ipcConnection.input, StandardCharsets.UTF_8));
 
         startResponsePump();
         startKeepAlivePings();
-        log.info("Connected to MPV IPC at {}", socketPath);
+        log.info("Connected to MPV IPC at {}", ipcPath);
+    }
+
+    private static IpcConnection openIpcConnection(String ipcPath) throws IOException {
+        long deadline = System.nanoTime() + CONNECT_TIMEOUT.toNanos();
+        IOException lastException = null;
+
+        do {
+            try {
+                return isWindows() ? openWindowsNamedPipe(ipcPath) : openUnixSocket(ipcPath);
+            } catch (IOException exception) {
+                lastException = exception;
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException interruptedException) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted while waiting for MPV IPC", interruptedException);
+                }
+            }
+        } while (System.nanoTime() < deadline);
+
+        throw new IOException("Could not connect to MPV IPC at '" + ipcPath + "' within " +
+                CONNECT_TIMEOUT.toSeconds() + " seconds", lastException);
+    }
+
+    private static IpcConnection openUnixSocket(String ipcPath) throws IOException {
+        File socketFile = new File(ipcPath);
+        if (!socketFile.exists()) {
+            throw new FileNotFoundException("MPV socket does not exist: " + ipcPath);
+        }
+
+        AFUNIXSocket socket = AFUNIXSocket.newInstance();
+        try {
+            socket.connect(AFUNIXSocketAddress.of(socketFile));
+            socket.setSoTimeout((int) READ_TIMEOUT.toMillis());
+            return new IpcConnection(socket, socket.getInputStream(), socket.getOutputStream());
+        } catch (IOException exception) {
+            socket.close();
+            throw exception;
+        }
+    }
+
+    private static IpcConnection openWindowsNamedPipe(String ipcPath) throws IOException {
+        RandomAccessFile pipe = new RandomAccessFile(ipcPath, "rw");
+        try {
+            FileDescriptor descriptor = pipe.getFD();
+            InputStream input = new NonClosingInputStream(new FileInputStream(descriptor));
+            OutputStream output = new NonClosingOutputStream(new FileOutputStream(descriptor));
+            return new IpcConnection(pipe, input, output);
+        } catch (IOException exception) {
+            pipe.close();
+            throw exception;
+        }
+    }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name", "").toLowerCase().startsWith("windows");
     }
 
     @Override
@@ -220,17 +269,63 @@ public final class MpvPlayer implements VideoPlayer {
 
     @Override
     public void close() {
-        try {
-            keepAliveExecutor.shutdownNow();
-            socket.shutdownOutput();
-            socket.shutdownInput();
-            writer.close();
-            reader.close();
-            socket.close();
-        } catch (IOException e) {
-            log.error("Failed to close MPV socket: {}", e.toString());
-        }
+        keepAliveExecutor.shutdownNow();
         ioExecutor.shutdownNow();
+
+        try {
+            writer.close();
+        } catch (IOException e) {
+            log.error("Failed to close MPV IPC writer: {}", e.toString());
+        }
+        try {
+            reader.close();
+        } catch (IOException e) {
+            log.error("Failed to close MPV IPC reader: {}", e.toString());
+        }
+        try {
+            connection.close();
+        } catch (IOException e) {
+            log.error("Failed to close MPV IPC connection: {}", e.toString());
+        }
+    }
+
+    private static final class IpcConnection implements Closeable {
+        private final Closeable handle;
+        private final InputStream input;
+        private final OutputStream output;
+
+        private IpcConnection(Closeable handle, InputStream input, OutputStream output) {
+            this.handle = handle;
+            this.input = input;
+            this.output = output;
+        }
+
+        @Override
+        public void close() throws IOException {
+            handle.close();
+        }
+    }
+
+    private static final class NonClosingInputStream extends FilterInputStream {
+        private NonClosingInputStream(InputStream input) {
+            super(input);
+        }
+
+        @Override
+        public void close() {
+            // The RandomAccessFile owns the shared Windows named-pipe handle.
+        }
+    }
+
+    private static final class NonClosingOutputStream extends FilterOutputStream {
+        private NonClosingOutputStream(OutputStream output) {
+            super(output);
+        }
+
+        @Override
+        public void close() throws IOException {
+            flush();
+        }
     }
 
 }

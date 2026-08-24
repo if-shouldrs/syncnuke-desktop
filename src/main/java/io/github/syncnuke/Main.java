@@ -8,6 +8,7 @@ import io.github.syncnuke.client.SyncManager;
 import io.github.syncnuke.player.MpvPlayer;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -15,6 +16,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class Main {
 
     private static final Logger logger = getLogger(Main.class);
+    private static final String IPC_PATH_PROPERTY = "syncnuke.mpv.ipc";
+    private static final String LAUNCH_MPV_PROPERTY = "syncnuke.mpv.launch";
 
     @Data
     private static class Environment {
@@ -27,21 +30,54 @@ public class Main {
     public static void main(String[] args) {
         Environment env = parseArguments(args);
         CountDownLatch latch = new CountDownLatch(1);
+        Process mpvProcess = null;
 
-        try (PlayerManager videoPlayer = getVideoPlayer()) {
+        try {
+            String ipcPath = getMpvIpcPath();
+            if (Boolean.getBoolean(LAUNCH_MPV_PROPERTY)) {
+                mpvProcess = launchMpv(ipcPath);
+                mpvProcess.onExit().thenRun(latch::countDown);
+            }
 
-            startSyncClient(env, videoPlayer);
-            videoPlayer.load(env.getFilePath());
+            try (PlayerManager videoPlayer = getVideoPlayer(ipcPath)) {
 
-            // Wait for client to close before terminating
-            latch.await();
+                startSyncClient(env, videoPlayer);
+                videoPlayer.load(env.getFilePath());
+
+                // Wait for MPV or the client to close before terminating.
+                latch.await();
+            }
         } catch (IOException exception) {
             logger.error("Error initializing MPV player: {}", exception.getMessage());
         } catch (Exception e) {
             logger.error("An unexpected error occurred: {}", e.getMessage());
         } finally {
             latch.countDown();
+            if (mpvProcess != null && mpvProcess.isAlive()) {
+                mpvProcess.destroy();
+            }
         }
+    }
+
+    private static Process launchMpv(String ipcPath) throws IOException {
+        logger.info("Starting MPV with IPC endpoint {}", ipcPath);
+        return new ProcessBuilder(
+                "mpv",
+                "--idle=yes",
+                "--force-window=yes",
+                "--input-ipc-server=" + ipcPath
+        ).inheritIO().start();
+    }
+
+    private static String getMpvIpcPath() {
+        String configuredPath = System.getProperty(IPC_PATH_PROPERTY);
+        if (configuredPath != null && !configuredPath.isBlank()) {
+            return configuredPath;
+        }
+        if (System.getProperty("os.name", "").toLowerCase().startsWith("windows")) {
+            return "\\\\.\\pipe\\syncnuke-mpv";
+        }
+        return Path.of(System.getProperty("user.home"), ".mpv-ipc", "mpvsocket").toString();
     }
 
     private static void startSyncClient(Environment env, PlayerManager videoPlayer) {
@@ -56,10 +92,9 @@ public class Main {
     }
 
     @SuppressWarnings("resource")
-    private static PlayerManager getVideoPlayer() throws IOException {
-        String socketPath = System.getProperty("user.home") + "/.mpv-ipc/mpvsocket";
+    private static PlayerManager getVideoPlayer(String ipcPath) throws IOException {
         PlayerManager playerManager = PlayerManager.getInstance();
-        playerManager.start(new MpvPlayer(socketPath));
+        playerManager.start(new MpvPlayer(ipcPath));
         return playerManager;
     }
 
