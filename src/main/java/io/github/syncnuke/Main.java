@@ -40,17 +40,20 @@ public class Main {
             }
 
             try (PlayerManager videoPlayer = getVideoPlayer(ipcPath)) {
-
+                if (env.getFilePath() != null && !env.getFilePath().isBlank()) {
+                    videoPlayer.load(env.getFilePath());
+                } else {
+                    logger.info("No --file argument supplied; using the media already loaded in MPV");
+                }
                 startSyncClient(env, videoPlayer);
-                videoPlayer.load(env.getFilePath());
 
                 // Wait for MPV or the client to close before terminating.
                 latch.await();
             }
         } catch (IOException exception) {
-            logger.error("Error initializing MPV player: {}", exception.getMessage());
+            logger.error("Error initializing MPV player", exception);
         } catch (Exception e) {
-            logger.error("An unexpected error occurred: {}", e.getMessage());
+            logger.error("An unexpected error occurred", e);
         } finally {
             latch.countDown();
             if (mpvProcess != null && mpvProcess.isAlive()) {
