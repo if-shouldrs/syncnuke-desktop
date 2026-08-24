@@ -41,3 +41,33 @@ dependencies {
     // Command Line Parser
     implementation 'commons-cli:commons-cli:1.9.0'
 }
+
+tasks.register('fatJar', Jar) {
+    group = 'build'
+    description = 'Builds an executable JAR containing syncnuke-core and all runtime dependencies.'
+    archiveClassifier = 'all'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+                'Main-Class': 'io.github.syncnuke.Main',
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version
+        )
+    }
+
+    from sourceSets.main.output
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.collect { dependency ->
+            dependency.isDirectory() ? dependency : zipTree(dependency)
+        }
+    }
+
+    // Signatures from dependency JARs are invalid after their contents are merged.
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+}
+
+tasks.named('assemble') {
+    dependsOn tasks.named('fatJar')
+}
