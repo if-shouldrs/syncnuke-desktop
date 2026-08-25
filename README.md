@@ -25,7 +25,7 @@ On Windows, use `scripts\build.bat` instead.
 The executable artifact is generated at:
 
 ```text
-build/libs/syncnuke-desktop-1.0-SNAPSHOT-all.jar
+build/libs/syncnuke-desktop-*.jar
 ```
 
 ## Usage
@@ -39,7 +39,7 @@ On Linux or macOS, create a directory for the Unix socket and pass its expanded 
 ```shell
 mkdir -p "$HOME/.mpv-ipc"
 
-java -jar build/libs/syncnuke-desktop-1.0-SNAPSHOT-all.jar \
+java -jar build/libs/syncnuke-desktop-*.jar \
   --player mpv \
   --player-host "$HOME/.mpv-ipc/mpvsocket" \
   --launch-player \
@@ -52,7 +52,7 @@ java -jar build/libs/syncnuke-desktop-1.0-SNAPSHOT-all.jar \
 On Windows, use a named pipe as the player host:
 
 ```powershell
-java -jar build/libs/syncnuke-desktop-1.0-SNAPSHOT-all.jar `
+java -jar build/libs/syncnuke-desktop-*.jar `
   --player mpv `
   --player-host '\\.\pipe\mpvsocket' `
   --launch-player `
@@ -109,7 +109,7 @@ The player connection can also be configured with JVM system properties:
 java \
   -Dsyncnuke.player.host="$HOME/.mpv-ipc/mpvsocket" \
   -Dsyncnuke.player.launch=true \
-  -jar build/libs/syncnuke-desktop-1.0-SNAPSHOT-all.jar
+  -jar build/libs/syncnuke-desktop-*.jar
 ```
 
 An explicit `--player-host` takes precedence over `syncnuke.player.host`.
