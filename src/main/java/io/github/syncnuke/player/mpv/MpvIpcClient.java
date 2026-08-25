@@ -1,4 +1,4 @@
-package io.github.syncnuke.player;
+package io.github.syncnuke.player.mpv;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;

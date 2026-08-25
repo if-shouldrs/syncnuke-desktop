@@ -40,6 +40,9 @@ dependencies {
 
     // Command Line Parser
     implementation 'commons-cli:commons-cli:1.9.0'
+
+    // Utilities
+    implementation 'org.apache.commons:commons-lang3:3.20.0'
 }
 
 tasks.register('fatJar', Jar) {

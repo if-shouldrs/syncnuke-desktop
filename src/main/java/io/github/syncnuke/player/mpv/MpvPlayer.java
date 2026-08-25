@@ -1,5 +1,6 @@
-package io.github.syncnuke.player;
+package io.github.syncnuke.player.mpv;
 
+import io.github.syncnuke.player.VideoPlayer;
 import io.github.syncnuke.player.data.PlaybackState;
 import io.github.syncnuke.player.data.PlayerState;
 import lombok.NonNull;

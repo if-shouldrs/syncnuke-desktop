@@ -4,8 +4,11 @@ import lombok.Data;
 
 @Data
 final class Options {
-    private String host = "localhost";
-    private int port = 8999;
+    private String player = "mpv";
+    private String playerHost;
     private String filePath;
+    private boolean launchPlayer;
+    private String syncHost = "localhost";
+    private int syncPort = 8999;
     private String protocol = "datasaver";
 }

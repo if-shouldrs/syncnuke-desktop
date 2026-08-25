@@ -1,87 +1,59 @@
 package io.github.syncnuke;
 
 import io.github.syncnuke.client.SyncManager;
-import io.github.syncnuke.player.MpvPlayer;
+import io.github.syncnuke.player.PlayerFactory;
 import io.github.syncnuke.player.PlayerManager;
+import io.github.syncnuke.player.PlayerRuntime;
 import io.github.syncnuke.player.VideoPlayer;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.concurrent.CountDownLatch;
 
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class Main {
 
     private static final Logger logger = getLogger(Main.class);
-    private static final String IPC_PATH_PROPERTY = "syncnuke.mpv.ipc";
-    private static final String LAUNCH_MPV_PROPERTY = "syncnuke.mpv.launch";
 
     public static void main(String[] args) {
         Options options = parseArguments(args);
-        CountDownLatch latch = new CountDownLatch(1);
-        Process mpvProcess = null;
 
-        try {
-            String ipcPath = getMpvIpcPath();
-            if (Boolean.getBoolean(LAUNCH_MPV_PROPERTY)) {
-                mpvProcess = launchMpv(ipcPath);
-                mpvProcess.onExit().thenRun(latch::countDown);
-            }
+        try (PlayerRuntime runtime = PlayerFactory.create(
+                options.getPlayer(),
+                options.getPlayerHost(),
+                options.isLaunchPlayer()
+        )) {
 
-            VideoPlayer mpvPlayer = new MpvPlayer(ipcPath);
-            try (PlayerManager videoPlayer = getVideoPlayer(mpvPlayer)) {
-                if (options.getFilePath() != null && !options.getFilePath().isBlank()) {
-                    mpvPlayer.load(options.getFilePath());
+            VideoPlayer player = runtime.getPlayer();
+            try (PlayerManager playerManager = getVideoPlayer(player)) {
+                if (!isEmpty(options.getFilePath())) {
+                    player.load(options.getFilePath());
                 } else {
-                    logger.info("No --file argument supplied; using the media already loaded in MPV");
+                    logger.info("No --file argument supplied; using the media already loaded in the selected player");
                 }
-                startSyncClient(options, videoPlayer);
 
-                // Wait for MPV or the client to close before terminating.
-                latch.await();
+                startSyncClient(options, playerManager);
+                runtime.awaitTermination();
             }
         } catch (IOException exception) {
-            logger.error("Error initializing MPV player", exception);
-        } catch (Exception e) {
-            logger.error("An unexpected error occurred", e);
-        } finally {
-            latch.countDown();
-            if (mpvProcess != null && mpvProcess.isAlive()) {
-                mpvProcess.destroy();
-            }
+            logger.error("Error initializing video player", exception);
+        } catch (Exception exception) {
+            logger.error("An unexpected error occurred", exception);
         }
     }
 
-    private static Process launchMpv(String ipcPath) throws IOException {
-        logger.info("Starting MPV with IPC endpoint {}", ipcPath);
-        return new ProcessBuilder(
-                "mpv",
-                "--idle=yes",
-                "--force-window=yes",
-                "--input-ipc-server=" + ipcPath
-        ).inheritIO().start();
-    }
-
-    private static String getMpvIpcPath() {
-        String configuredPath = System.getProperty(IPC_PATH_PROPERTY);
-        if (configuredPath != null && !configuredPath.isBlank()) {
-            return configuredPath;
-        }
-        if (System.getProperty("os.name", "").toLowerCase().startsWith("windows")) {
-            return "\\\\.\\pipe\\syncnuke-mpv";
-        }
-        return Path.of(System.getProperty("user.home"), ".mpv-ipc", "mpvsocket").toString();
-    }
-
-    private static void startSyncClient(Options options, PlayerManager videoPlayer) {
-        SyncManager syncManager = SyncManager.getInstance(videoPlayer);
+    private static void startSyncClient(Options options, PlayerManager playerManager) {
+        SyncManager syncManager = SyncManager.getInstance(playerManager);
         syncManager.start(
                 options.getProtocol(),
-                options.getHost(),
-                options.getPort(),
+                options.getSyncHost(),
+                options.getSyncPort(),
                 "user",
                 "room"
         );
@@ -101,18 +73,27 @@ public class Main {
         Options config = new Options();
         try {
             cmd = parser.parse(options, args);
+            if (cmd.hasOption("player")) {
+                config.setPlayer(cmd.getOptionValue("player"));
+            }
+            if (cmd.hasOption("player-host")) {
+                config.setPlayerHost(cmd.getOptionValue("player-host"));
+            }
+            if (cmd.hasOption("launch-player")) {
+                config.setLaunchPlayer(true);
+            }
             if (cmd.hasOption("host")) {
-                config.setHost(cmd.getOptionValue("host"));
+                config.setSyncHost(cmd.getOptionValue("host"));
             }
             if (cmd.hasOption("port")) {
-                config.setPort(Integer.parseInt(cmd.getOptionValue("port")));
+                config.setSyncPort(Integer.parseInt(cmd.getOptionValue("port")));
             }
             if (cmd.hasOption("protocol")) {
                 config.setProtocol(cmd.getOptionValue("protocol"));
             }
             config.setFilePath(cmd.getOptionValue("file"));
-        } catch (ParseException e) {
-            logger.error("Failed to parse command line arguments: {}", e.getMessage());
+        } catch (ParseException exception) {
+            logger.error("Failed to parse command line arguments: {}", exception.getMessage());
             System.exit(1);
         }
         return config;
@@ -120,6 +101,20 @@ public class Main {
 
     private static org.apache.commons.cli.Options getOptions() {
         org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
+        options.addOption(Option.builder()
+                .longOpt("player")
+                .hasArg()
+                .desc("Video player to use (default: mpv)")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("player-host")
+                .hasArg()
+                .desc("Video player IPC, pipe, or network host")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("launch-player")
+                .desc("Launch the selected video player")
+                .build());
         options.addOption(Option.builder()
                 .longOpt("host")
                 .hasArg()
@@ -143,5 +138,4 @@ public class Main {
                 .build());
         return options;
     }
-
 }
