@@ -2,12 +2,12 @@
 
 SyncNuke Desktop connects a local video player to a SyncNuke synchronization server. It translates synchronized playback state into player commands while keeping player-specific integrations separate from the synchronization core.
 
-MPV is currently the only supported player. The player abstraction is intentionally provider-based so additional desktop players can be added without changing the application entry point.
+MPV is currently the only supported player, more to come in the future.
 
 ## Requirements
 
 - Java 21
-- MPV available on `PATH` when using `--launch-player`
+- MPV Player
 - A running SyncNuke-compatible server
 
 ## Building
