@@ -113,3 +113,11 @@ java \
 ```
 
 An explicit `--player-host` takes precedence over `syncnuke.player.host`.
+
+## License
+
+[![GNU Affero General Public License v3](https://www.gnu.org/graphics/agplv3-155x51.png)](LICENSE.md)
+
+SyncNuke Desktop is free software licensed under the [GNU Affero General Public License v3.0](LICENSE.md) (`AGPL-3.0-only`). You may use, modify, and redistribute it under the terms of that license.
+
+The software is provided without warranty, to the extent permitted by applicable law. See [LICENSE.md](LICENSE.md) for the complete warranty disclaimer, limitation of liability, and license terms.
