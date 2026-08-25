@@ -18,7 +18,7 @@ for /f "tokens=3" %%V in ('findstr /B /C:"version = " "%PROJECT_DIR%\build.gradl
 set "VERSION=%VERSION:'=%"
 set "JAR_PATH=%PROJECT_DIR%\build\libs\syncnuke-desktop-%VERSION%-all.jar"
 
-"%JAVA_COMMAND%" -jar "%JAR_PATH%" ^
+"%JAVA_COMMAND%" "-Dsyncnuke.mpv.executable=%MPV_COMMAND%" -jar "%JAR_PATH%" ^
   --player mpv ^
   --player-host "\\.\pipe\mpvsocket" ^
   --launch-player ^
@@ -30,14 +30,23 @@ exit /b %EXIT_CODE%
 
 :ensure_mpv
 where mpv.exe >nul 2>&1
-if not errorlevel 1 exit /b 0
+if not errorlevel 1 (
+  set "MPV_COMMAND=mpv.exe"
+  exit /b 0
+)
+
+where mpvnet.exe >nul 2>&1
+if not errorlevel 1 (
+  set "MPV_COMMAND=mpvnet.exe"
+  exit /b 0
+)
 
 set "MPV_PATH_FILE=%PROJECT_DIR%\dist\mpv\path"
 set "MPV_COMMAND="
 if exist "%MPV_PATH_FILE%" set /p "MPV_COMMAND="<"%MPV_PATH_FILE%"
 if defined MPV_COMMAND if exist "%MPV_COMMAND%" goto configure_mpv
 
-set /p "MPV_COMMAND=MPV was not found on PATH. Enter the path to mpv.exe: "
+set /p "MPV_COMMAND=MPV was not found on PATH. Enter the path to the player executable: "
 if not defined MPV_COMMAND (
   echo An MPV executable path is required.
   exit /b 1

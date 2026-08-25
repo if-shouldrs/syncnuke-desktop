@@ -8,6 +8,7 @@ import java.io.IOException;
 
 @Slf4j
 public final class MpvProvider implements PlayerProvider {
+    private static final String MPV_EXECUTABLE_PROPERTY = "syncnuke.mpv.executable";
 
     @Override
     public VideoPlayer connect(String host) throws IOException {
@@ -18,7 +19,7 @@ public final class MpvProvider implements PlayerProvider {
     public Process launch(String host) throws IOException {
         log.info("Starting MPV with IPC endpoint {}", host);
         return new ProcessBuilder(
-                "mpv",
+                System.getProperty(MPV_EXECUTABLE_PROPERTY, "mpv"),
                 "--idle=yes",
                 "--force-window=yes",
                 "--input-ipc-server=" + host
