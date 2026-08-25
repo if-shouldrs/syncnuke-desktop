@@ -8,6 +8,7 @@ final class Environment {
     private String playerHost;
     private String filePath;
     private boolean launchPlayer;
+    private Long pollingRate;
     private String syncHost = "localhost";
     private int syncPort = 8999;
     private String protocol = "datasaver";

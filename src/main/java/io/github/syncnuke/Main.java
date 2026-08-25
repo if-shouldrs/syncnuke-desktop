@@ -32,7 +32,7 @@ public class Main {
         )) {
 
             VideoPlayer player = runtime.getPlayer();
-            try (PlayerManager playerManager = getVideoPlayer(player)) {
+            try (PlayerManager playerManager = getVideoPlayer(player, env.getPollingRate())) {
                 if (!isEmpty(env.getFilePath())) {
                     player.load(env.getFilePath());
                 } else {
@@ -60,8 +60,8 @@ public class Main {
         );
     }
 
-    private static PlayerManager getVideoPlayer(VideoPlayer player) throws InterruptedException {
-        PlayerManager playerManager = PlayerManager.getInstance();
+    private static PlayerManager getVideoPlayer(VideoPlayer player, Long pollingRate) throws InterruptedException {
+        PlayerManager playerManager = pollingRate == null ? PlayerManager.getInstance() : PlayerManager.getInstance(pollingRate);
         int retries = 0;
         while (true) {
             try {
@@ -93,6 +93,9 @@ public class Main {
             }
             if (cmd.hasOption("launch-player")) {
                 config.setLaunchPlayer(true);
+            }
+            if (cmd.hasOption("polling-rate")) {
+                config.setPollingRate(Long.parseLong(cmd.getOptionValue("polling-rate")));
             }
             if (cmd.hasOption("host")) {
                 config.setSyncHost(cmd.getOptionValue("host"));
@@ -126,6 +129,12 @@ public class Main {
         options.addOption(Option.builder()
                 .longOpt("launch-player")
                 .desc("Launch the selected video player")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("polling-rate")
+                .hasArg()
+                .desc("Player polling interval in milliseconds")
+                .type(Number.class)
                 .build());
         options.addOption(Option.builder()
                 .longOpt("host")
