@@ -17,10 +17,10 @@ Clone the repository, then build the Desktop fat JAR:
 ```shell
 git clone git@github.com:if-shouldrs/syncnuke-desktop.git
 cd syncnuke-desktop
-./gradlew assemble
+./scripts/build.sh
 ```
 
-On Windows, use `gradlew.bat` instead of `./gradlew`.
+On Windows, use `scripts\build.bat` instead.
 
 The executable artifact is generated at:
 
