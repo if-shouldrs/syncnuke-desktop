@@ -1,4 +1,4 @@
-package io.github.syncnuke.player.ipc;
+package io.github.syncnuke.player.net;
 
 import lombok.Getter;
 import org.newsclub.net.unix.AFUNIXSocket;
