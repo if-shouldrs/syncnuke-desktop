@@ -44,7 +44,9 @@ if not errorlevel 1 (
 set "MPV_PATH_FILE=%PROJECT_DIR%\dist\mpv\path"
 set "MPV_COMMAND="
 if exist "%MPV_PATH_FILE%" set /p "MPV_COMMAND="<"%MPV_PATH_FILE%"
-if defined MPV_COMMAND if exist "%MPV_COMMAND%" goto configure_mpv
+if defined MPV_COMMAND if exist "%MPV_COMMAND%\mpv.exe" set "MPV_COMMAND=%MPV_COMMAND%\mpv.exe"
+if defined MPV_COMMAND if exist "%MPV_COMMAND%\mpvnet.exe" set "MPV_COMMAND=%MPV_COMMAND%\mpvnet.exe"
+if defined MPV_COMMAND if not exist "%MPV_COMMAND%\NUL" if exist "%MPV_COMMAND%" goto configure_mpv
 
 set /p "MPV_COMMAND=MPV was not found on PATH. Enter the path to the player executable: "
 if not defined MPV_COMMAND (
@@ -52,6 +54,12 @@ if not defined MPV_COMMAND (
   exit /b 1
 )
 set "MPV_COMMAND=%MPV_COMMAND:"=%"
+if exist "%MPV_COMMAND%\mpv.exe" set "MPV_COMMAND=%MPV_COMMAND%\mpv.exe"
+if exist "%MPV_COMMAND%\mpvnet.exe" set "MPV_COMMAND=%MPV_COMMAND%\mpvnet.exe"
+if exist "%MPV_COMMAND%\NUL" (
+  echo MPV executable not found: %MPV_COMMAND%
+  exit /b 1
+)
 if not exist "%MPV_COMMAND%" (
   echo MPV executable not found: %MPV_COMMAND%
   exit /b 1

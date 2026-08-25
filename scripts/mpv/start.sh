@@ -20,6 +20,10 @@ if ! command -v mpv >/dev/null 2>&1; then
     IFS= read -r mpv_command < "$mpv_path_file" || true
   fi
 
+  if [ -d "$mpv_command" ]; then
+    mpv_command="${mpv_command%/}/mpv"
+  fi
+
   if [ ! -x "$mpv_command" ]; then
     printf "MPV was not found on PATH. Enter the path to the MPV executable: "
     if ! IFS= read -r mpv_command; then
@@ -28,6 +32,10 @@ if ! command -v mpv >/dev/null 2>&1; then
     case "$mpv_command" in
       ~/*) mpv_command="$HOME/${mpv_command#~/}" ;;
     esac
+    if [ -d "$mpv_command" ]; then
+      mpv_command="${mpv_command%/}/mpv"
+    fi
+
     if [ ! -x "$mpv_command" ]; then
       echo "MPV executable not found: $mpv_command" >&2
       exit 1
