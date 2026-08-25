@@ -1,12 +1,11 @@
 package io.github.syncnuke;
 
-import io.github.syncnuke.player.PlayerManager;
-import io.github.syncnuke.player.VideoPlayer;
-import lombok.Data;
-import org.apache.commons.cli.*;
-import org.slf4j.Logger;
 import io.github.syncnuke.client.SyncManager;
 import io.github.syncnuke.player.MpvPlayer;
+import io.github.syncnuke.player.PlayerManager;
+import io.github.syncnuke.player.VideoPlayer;
+import org.apache.commons.cli.*;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -20,16 +19,8 @@ public class Main {
     private static final String IPC_PATH_PROPERTY = "syncnuke.mpv.ipc";
     private static final String LAUNCH_MPV_PROPERTY = "syncnuke.mpv.launch";
 
-    @Data
-    private static class Environment {
-        private String host = "localhost";
-        private int port = 8999;
-        private String filePath;
-        private String protocol = "datasaver";
-    }
-
     public static void main(String[] args) {
-        Environment env = parseArguments(args);
+        Options options = parseArguments(args);
         CountDownLatch latch = new CountDownLatch(1);
         Process mpvProcess = null;
 
@@ -42,12 +33,12 @@ public class Main {
 
             VideoPlayer mpvPlayer = new MpvPlayer(ipcPath);
             try (PlayerManager videoPlayer = getVideoPlayer(mpvPlayer)) {
-                if (env.getFilePath() != null && !env.getFilePath().isBlank()) {
-                    mpvPlayer.load(env.getFilePath());
+                if (options.getFilePath() != null && !options.getFilePath().isBlank()) {
+                    mpvPlayer.load(options.getFilePath());
                 } else {
                     logger.info("No --file argument supplied; using the media already loaded in MPV");
                 }
-                startSyncClient(env, videoPlayer);
+                startSyncClient(options, videoPlayer);
 
                 // Wait for MPV or the client to close before terminating.
                 latch.await();
@@ -85,12 +76,12 @@ public class Main {
         return Path.of(System.getProperty("user.home"), ".mpv-ipc", "mpvsocket").toString();
     }
 
-    private static void startSyncClient(Environment env, PlayerManager videoPlayer) {
+    private static void startSyncClient(Options options, PlayerManager videoPlayer) {
         SyncManager syncManager = SyncManager.getInstance(videoPlayer);
         syncManager.start(
-                env.getProtocol(),
-                env.getHost(),
-                env.getPort(),
+                options.getProtocol(),
+                options.getHost(),
+                options.getPort(),
                 "user",
                 "room"
         );
@@ -102,12 +93,12 @@ public class Main {
         return playerManager;
     }
 
-    private static Environment parseArguments(String[] args) {
+    private static Options parseArguments(String[] args) {
         CommandLine cmd;
-        Options options = getOptions();
+        org.apache.commons.cli.Options options = getOptions();
         CommandLineParser parser = new DefaultParser();
 
-        Environment config = new Environment();
+        Options config = new Options();
         try {
             cmd = parser.parse(options, args);
             if (cmd.hasOption("host")) {
@@ -127,8 +118,8 @@ public class Main {
         return config;
     }
 
-    private static Options getOptions() {
-        Options options = new Options();
+    private static org.apache.commons.cli.Options getOptions() {
+        org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
         options.addOption(Option.builder()
                 .longOpt("host")
                 .hasArg()
