@@ -11,8 +11,13 @@ if ! command -v java >/dev/null 2>&1; then
   java_command="$project_dir/dist/jdk/bin/java"
 fi
 
+exit_code=0
 "$java_command" \
   -classpath "$project_dir/gradle/wrapper/gradle-wrapper.jar" \
   org.gradle.wrapper.GradleWrapperMain \
   --project-dir "$project_dir" \
-  build
+  build || exit_code=$?
+
+printf '\nPress Enter to continue... '
+IFS= read -r _ || true
+exit "$exit_code"

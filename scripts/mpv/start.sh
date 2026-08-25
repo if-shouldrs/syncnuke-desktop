@@ -45,8 +45,13 @@ fi
 
 mkdir -p "$(dirname -- "$player_host")"
 
-exec "$java_command" -jar "$project_dir/build/libs/syncnuke-desktop-$version-all.jar" \
+exit_code=0
+"$java_command" -jar "$project_dir/build/libs/syncnuke-desktop-$version-all.jar" \
   --player mpv \
   --player-host "$player_host" \
   --launch-player \
-  "$@"
+  "$@" || exit_code=$?
+
+printf '\nPress Enter to continue... '
+IFS= read -r _ || true
+exit "$exit_code"

@@ -24,7 +24,9 @@ set "JAR_PATH=%PROJECT_DIR%\build\libs\syncnuke-desktop-%VERSION%-all.jar"
   --launch-player ^
   %*
 
-exit /b %ERRORLEVEL%
+set "EXIT_CODE=%ERRORLEVEL%"
+pause
+exit /b %EXIT_CODE%
 
 :ensure_mpv
 where mpv.exe >nul 2>&1

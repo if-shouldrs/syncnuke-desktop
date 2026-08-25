@@ -17,4 +17,6 @@ if errorlevel 1 (
   --project-dir "%PROJECT_DIR%" ^
   build
 
-exit /b %ERRORLEVEL%
+set "EXIT_CODE=%ERRORLEVEL%"
+pause
+exit /b %EXIT_CODE%
