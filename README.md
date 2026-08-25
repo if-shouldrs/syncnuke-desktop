@@ -17,10 +17,10 @@ Clone the repository, then build the Desktop fat JAR:
 ```shell
 git clone git@github.com:if-shouldrs/syncnuke-desktop.git
 cd syncnuke-desktop
-./scripts/build.sh
+./scripts/build/build.sh
 ```
 
-On Windows, use `scripts\build.bat` instead.
+On Windows, use `scripts\build\build.bat` instead.
 
 The executable artifact is generated at:
 

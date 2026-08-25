@@ -3,6 +3,7 @@ setlocal
 
 set "PROJECT_DIR=%~dp0..\.."
 set "JDK_DIR=%PROJECT_DIR%\dist\jdk"
+if exist "%PROJECT_DIR%\VERSION" set "JDK_DIR=%PROJECT_DIR%\jdk"
 
 if exist "%JDK_DIR%\bin\java.exe" exit /b 0
 

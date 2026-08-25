@@ -3,11 +3,11 @@
 set -eu
 
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-project_dir=$(CDPATH= cd -- "$script_dir/.." && pwd)
+project_dir=$(CDPATH= cd -- "$script_dir/../.." && pwd)
 java_command=java
 
 if ! command -v java >/dev/null 2>&1; then
-  "$script_dir/jdk/download.sh"
+  "$script_dir/../jdk/download.sh"
   java_command="$project_dir/dist/jdk/bin/java"
 fi
 
@@ -18,6 +18,8 @@ exit_code=0
   --project-dir "$project_dir" \
   build || exit_code=$?
 
-printf '\nPress Enter to continue... '
-IFS= read -r _ || true
+if [ "${SYNCNUKE_NO_PAUSE:-}" != "1" ]; then
+  printf '\nPress Enter to continue... '
+  IFS= read -r _ || true
+fi
 exit "$exit_code"

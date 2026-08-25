@@ -4,14 +4,23 @@ set -eu
 
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 project_dir=$(CDPATH= cd -- "$script_dir/../.." && pwd)
-version=$(grep '^version = ' "$project_dir/build.gradle" | cut -d "'" -f 2)
 player_host="$HOME/.mpv-ipc/mpvsocket"
-mpv_path_file="$project_dir/dist/mpv/path"
 java_command=java
+
+if [ -f "$project_dir/VERSION" ]; then
+  version=$(sed -n '1p' "$project_dir/VERSION")
+  jar="$project_dir/syncnuke-desktop-$version-all.jar"
+  runtime_dir="$project_dir"
+else
+  version=$(grep '^version = ' "$project_dir/build.gradle" | cut -d "'" -f 2)
+  jar="$project_dir/build/libs/syncnuke-desktop-$version-all.jar"
+  runtime_dir="$project_dir/dist"
+fi
+mpv_path_file="$runtime_dir/mpv/path"
 
 if ! command -v java >/dev/null 2>&1; then
   "$script_dir/../jdk/download.sh"
-  java_command="$project_dir/dist/jdk/bin/java"
+  java_command="$runtime_dir/jdk/bin/java"
 fi
 
 if ! command -v mpv >/dev/null 2>&1; then
@@ -54,7 +63,7 @@ fi
 mkdir -p "$(dirname -- "$player_host")"
 
 exit_code=0
-"$java_command" -jar "$project_dir/build/libs/syncnuke-desktop-$version-all.jar" \
+"$java_command" -jar "$jar" \
   --player mpv \
   --player-host "$player_host" \
   --launch-player \
