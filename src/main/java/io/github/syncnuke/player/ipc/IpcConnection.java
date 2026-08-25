@@ -10,6 +10,8 @@ import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -76,8 +78,19 @@ public final class IpcConnection implements Closeable {
         RandomAccessFile pipe = new RandomAccessFile(ipcPath, "rw");
         try {
             FileDescriptor descriptor = pipe.getFD();
-            InputStream input = new NonClosingInputStream(new FileInputStream(descriptor));
-            OutputStream output = new NonClosingOutputStream(new FileOutputStream(descriptor));
+
+            // The descriptor is owned by the pipe - stream views must not close it.
+            InputStream input = new FilterInputStream(new FileInputStream(descriptor)) {
+                @Override public void close() {
+                    /* Do nothing */ }
+            };
+            OutputStream output = new FilterOutputStream(new FileOutputStream(descriptor)) {
+                @Override
+                public void close() throws IOException {
+                    flush();
+                }
+            };
+
             return new IpcConnection(pipe, input, output);
         } catch (IOException exception) {
             pipe.close();
