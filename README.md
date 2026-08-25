@@ -120,4 +120,4 @@ An explicit `--player-host` takes precedence over `syncnuke.player.host`.
 
 SyncNuke Desktop is free software licensed under the [GNU Affero General Public License v3.0](LICENSE.md) (`AGPL-3.0-only`). You may use, modify, and redistribute it under the terms of that license.
 
-The software is provided without warranty, to the extent permitted by applicable law. See [LICENSE.md](LICENSE.md) for the complete warranty disclaimer, limitation of liability, and license terms.
+This software is provided without warranty, to the extent permitted by applicable law. See [LICENSE.md](LICENSE.md) for the complete license terms, including the warranty disclaimer and limitation of liability.
