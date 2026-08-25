@@ -9,6 +9,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 
@@ -22,23 +23,23 @@ public class Main {
     private static final Logger logger = getLogger(Main.class);
 
     public static void main(String[] args) {
-        Options options = parseArguments(args);
+        Environment env = parseArguments(args);
 
         try (PlayerRuntime runtime = PlayerFactory.create(
-                options.getPlayer(),
-                options.getPlayerHost(),
-                options.isLaunchPlayer()
+                env.getPlayer(),
+                env.getPlayerHost(),
+                env.isLaunchPlayer()
         )) {
 
             VideoPlayer player = runtime.getPlayer();
             try (PlayerManager playerManager = getVideoPlayer(player)) {
-                if (!isEmpty(options.getFilePath())) {
-                    player.load(options.getFilePath());
+                if (!isEmpty(env.getFilePath())) {
+                    player.load(env.getFilePath());
                 } else {
                     logger.info("No --file argument supplied; using the media already loaded in the selected player");
                 }
 
-                startSyncClient(options, playerManager);
+                startSyncClient(env, playerManager);
                 runtime.awaitTermination();
             }
         } catch (IOException exception) {
@@ -48,12 +49,12 @@ public class Main {
         }
     }
 
-    private static void startSyncClient(Options options, PlayerManager playerManager) {
+    private static void startSyncClient(Environment env, PlayerManager playerManager) {
         SyncManager syncManager = SyncManager.getInstance(playerManager);
         syncManager.start(
-                options.getProtocol(),
-                options.getSyncHost(),
-                options.getSyncPort(),
+                env.getProtocol(),
+                env.getSyncHost(),
+                env.getSyncPort(),
                 "user",
                 "room"
         );
@@ -65,12 +66,12 @@ public class Main {
         return playerManager;
     }
 
-    private static Options parseArguments(String[] args) {
+    private static Environment parseArguments(String[] args) {
         CommandLine cmd;
-        org.apache.commons.cli.Options options = getOptions();
+        Options options = getOptions();
         CommandLineParser parser = new DefaultParser();
 
-        Options config = new Options();
+        Environment config = new Environment();
         try {
             cmd = parser.parse(options, args);
             if (cmd.hasOption("player")) {
@@ -99,8 +100,8 @@ public class Main {
         return config;
     }
 
-    private static org.apache.commons.cli.Options getOptions() {
-        org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
+    private static Options getOptions() {
+        Options options = new Options();
         options.addOption(Option.builder()
                 .longOpt("player")
                 .hasArg()

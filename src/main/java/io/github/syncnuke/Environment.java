@@ -3,7 +3,7 @@ package io.github.syncnuke;
 import lombok.Data;
 
 @Data
-final class Options {
+final class Environment {
     private String player = "mpv";
     private String playerHost;
     private String filePath;
