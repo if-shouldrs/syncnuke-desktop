@@ -60,10 +60,21 @@ public class Main {
         );
     }
 
-    private static PlayerManager getVideoPlayer(VideoPlayer player) {
+    private static PlayerManager getVideoPlayer(VideoPlayer player) throws InterruptedException {
         PlayerManager playerManager = PlayerManager.getInstance();
-        playerManager.start(player);
-        return playerManager;
+        int retries = 0;
+        while (true) {
+            try {
+                playerManager.start(player);
+                return playerManager;
+            } catch (RuntimeException exception) {
+                if (++retries > 10) {
+                    throw exception;
+                }
+                logger.warn("Failed to initialize video player; retrying in 3 seconds ({}/10)", retries);
+                Thread.sleep(3000);
+            }
+        }
     }
 
     private static Environment parseArguments(String[] args) {
