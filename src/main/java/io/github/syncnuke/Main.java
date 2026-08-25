@@ -1,6 +1,7 @@
 package io.github.syncnuke;
 
 import io.github.syncnuke.player.PlayerManager;
+import io.github.syncnuke.player.VideoPlayer;
 import lombok.Data;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
@@ -39,9 +40,10 @@ public class Main {
                 mpvProcess.onExit().thenRun(latch::countDown);
             }
 
-            try (PlayerManager videoPlayer = getVideoPlayer(ipcPath)) {
+            VideoPlayer mpvPlayer = new MpvPlayer(ipcPath);
+            try (PlayerManager videoPlayer = getVideoPlayer(mpvPlayer)) {
                 if (env.getFilePath() != null && !env.getFilePath().isBlank()) {
-                    videoPlayer.load(env.getFilePath());
+                    mpvPlayer.load(env.getFilePath());
                 } else {
                     logger.info("No --file argument supplied; using the media already loaded in MPV");
                 }
@@ -94,10 +96,9 @@ public class Main {
         );
     }
 
-    @SuppressWarnings("resource")
-    private static PlayerManager getVideoPlayer(String ipcPath) throws IOException {
+    private static PlayerManager getVideoPlayer(VideoPlayer player) {
         PlayerManager playerManager = PlayerManager.getInstance();
-        playerManager.start(new MpvPlayer(ipcPath));
+        playerManager.start(player);
         return playerManager;
     }
 
