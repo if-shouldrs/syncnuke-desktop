@@ -22,7 +22,7 @@ dependencies {
     implementation project(':syncnuke-core')
 
     // Jackson
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.2'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok:1.18.36'
