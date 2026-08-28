@@ -1,5 +1,6 @@
 package io.github.syncnuke.player.mpv;
 
+import io.github.syncnuke.player.NoVideoLoadedException;
 import io.github.syncnuke.player.VideoPlayer;
 import io.github.syncnuke.player.data.PlaybackState;
 import io.github.syncnuke.player.data.PlayerState;
@@ -30,21 +31,28 @@ public final class MpvPlayer implements VideoPlayer {
 
     @Override
     public void play() {
+        ensureVideoLoaded();
         ipcClient.setProperty("pause", false);
     }
 
     @Override
     public void pause() {
+        ensureVideoLoaded();
         ipcClient.setProperty("pause", true);
     }
 
     @Override
     public void seek(double position) {
+        if (!Double.isFinite(position) || position < 0) {
+            throw new IllegalArgumentException("Position must be a non-negative finite number.");
+        }
+        ensureVideoLoaded();
         ipcClient.setProperty("time-pos", position);
     }
 
     @Override
     public PlayerState getStatus() {
+        ensureVideoLoaded();
         PlayerState status = new PlayerState();
         status.setPlaybackState(isPaused() ? PlaybackState.PAUSED : PlaybackState.PLAYING);
         status.setPosition(getPosition());
@@ -67,12 +75,20 @@ public final class MpvPlayer implements VideoPlayer {
 
     @Override
     public void load(String filePath) {
+        if (filePath == null || filePath.isEmpty()) {
+            throw new IllegalArgumentException("File must not be empty.");
+        }
         File file = new File(filePath);
         if (!file.exists()) {
-            log.error("File does not exist: {}", filePath);
-            return;
+            throw new IllegalArgumentException("File does not exist: " + filePath);
         }
         ipcClient.command("loadfile", filePath);
+    }
+
+    private void ensureVideoLoaded() {
+        if (ipcClient.getProperty("idle-active", Boolean.class)) {
+            throw new NoVideoLoadedException();
+        }
     }
 
     private void startKeepAlivePings() {

@@ -110,7 +110,7 @@ final class MpvIpcClient implements AutoCloseable {
             throw new EOFException("MPV closed the IPC connection");
         } catch (IOException e) {
             log.error("IPC request {} failed: {}", reqId, e.toString());
-            return null;
+            throw new IllegalStateException("MPV IPC request failed.", e);
         }
     }
 
