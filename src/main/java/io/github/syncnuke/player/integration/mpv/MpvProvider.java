@@ -1,4 +1,4 @@
-package io.github.syncnuke.player.mpv;
+package io.github.syncnuke.player.integration.mpv;
 
 import io.github.syncnuke.player.PlayerProvider;
 import io.github.syncnuke.player.VideoPlayer;

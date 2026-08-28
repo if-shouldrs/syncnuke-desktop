@@ -1,11 +1,11 @@
-package io.github.syncnuke.player.mpv;
+package io.github.syncnuke.player.integration.mpv;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.github.syncnuke.player.net.IpcConnection;
+import io.github.syncnuke.player.integration.net.IpcConnection;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;

@@ -1,6 +1,6 @@
 package io.github.syncnuke.player;
 
-import io.github.syncnuke.player.mpv.MpvProvider;
+import io.github.syncnuke.player.integration.mpv.MpvProvider;
 
 import java.io.IOException;
 

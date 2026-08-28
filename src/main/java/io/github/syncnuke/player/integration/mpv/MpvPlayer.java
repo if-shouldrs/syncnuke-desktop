@@ -1,4 +1,4 @@
-package io.github.syncnuke.player.mpv;
+package io.github.syncnuke.player.integration.mpv;
 
 import io.github.syncnuke.player.NoVideoLoadedException;
 import io.github.syncnuke.player.VideoPlayer;
@@ -22,7 +22,7 @@ public final class MpvPlayer implements VideoPlayer {
         return t;
     });
 
-    public MpvPlayer(@NonNull String ipcPath) throws IOException {
+    MpvPlayer(@NonNull String ipcPath) throws IOException {
         this.ipcClient = MpvIpcClient.connect(ipcPath);
 
         startKeepAlivePings();
