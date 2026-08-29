@@ -51,6 +51,15 @@ public final class MpvPlayer implements VideoPlayer {
     }
 
     @Override
+    public void setPlaybackSpeed(double playbackSpeed) {
+        if (!Double.isFinite(playbackSpeed) || playbackSpeed <= 0) {
+            throw new IllegalArgumentException("Playback speed must be a positive finite number.");
+        }
+        ensureVideoLoaded();
+        ipcClient.setProperty("speed", playbackSpeed);
+    }
+
+    @Override
     public PlayerState getStatus() {
         ensureVideoLoaded();
         PlayerState status = new PlayerState();
