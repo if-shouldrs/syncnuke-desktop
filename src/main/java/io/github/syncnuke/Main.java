@@ -2,7 +2,6 @@ package io.github.syncnuke;
 
 import io.github.syncnuke.client.SyncManager;
 import io.github.syncnuke.player.PlayerFactory;
-import io.github.syncnuke.player.PlayerManager;
 import io.github.syncnuke.player.PlayerRuntime;
 import io.github.syncnuke.player.VideoPlayer;
 import org.apache.commons.cli.CommandLine;
@@ -32,14 +31,14 @@ public class Main {
         )) {
 
             VideoPlayer player = runtime.getPlayer();
-            try (PlayerManager playerManager = getVideoPlayer(player, env.getPollingRate())) {
+            try (SyncManager syncManager = getSyncManager(player, env.getPollingRate())) {
                 if (!isEmpty(env.getFilePath())) {
                     player.load(env.getFilePath());
                 } else {
                     logger.info("No --file argument supplied; using the media already loaded in the selected player");
                 }
 
-                startSyncClient(env, playerManager);
+                startSyncClient(env, syncManager);
                 runtime.awaitTermination();
             }
         } catch (IOException exception) {
@@ -49,8 +48,7 @@ public class Main {
         }
     }
 
-    private static void startSyncClient(Environment env, PlayerManager playerManager) {
-        SyncManager syncManager = SyncManager.getInstance(playerManager);
+    private static void startSyncClient(Environment env, SyncManager syncManager) {
         syncManager.start(
                 env.getProtocol(),
                 env.getSyncHost(),
@@ -60,13 +58,11 @@ public class Main {
         );
     }
 
-    private static PlayerManager getVideoPlayer(VideoPlayer player, Long pollingRate) throws InterruptedException {
-        PlayerManager playerManager = pollingRate == null ? PlayerManager.getInstance() : PlayerManager.getInstance(pollingRate);
+    private static SyncManager getSyncManager(VideoPlayer player, Long pollingRate) throws InterruptedException {
         int retries = 0;
         while (true) {
             try {
-                playerManager.start(player);
-                return playerManager;
+                return pollingRate == null ? SyncManager.getInstance(player) : SyncManager.getInstance(player, pollingRate);
             } catch (RuntimeException exception) {
                 if (++retries > 10) {
                     throw exception;
