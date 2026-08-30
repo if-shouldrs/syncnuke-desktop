@@ -16,16 +16,8 @@ public final class MpvPlayer implements VideoPlayer {
 
     private final MpvIpcClient ipcClient;
 
-    private final ScheduledExecutorService keepAliveExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "mpv-keep-alive");
-        t.setDaemon(true);
-        return t;
-    });
-
     MpvPlayer(@NonNull String ipcPath) throws IOException {
         this.ipcClient = MpvIpcClient.connect(ipcPath);
-
-        startKeepAlivePings();
         log.info("Connected to MPV IPC at {}", ipcPath);
     }
 
@@ -100,19 +92,8 @@ public final class MpvPlayer implements VideoPlayer {
         }
     }
 
-    private void startKeepAlivePings() {
-        keepAliveExecutor.scheduleAtFixedRate(() -> {
-            try {
-                ipcClient.command("get_property", "pause");
-            } catch (Exception e) {
-                log.warn("Keep-alive ping failed: {}", e.getMessage());
-            }
-        }, 1, 3, TimeUnit.SECONDS);
-    }
-
     @Override
     public void close() {
-        keepAliveExecutor.shutdownNow();
         ipcClient.close();
     }
 
