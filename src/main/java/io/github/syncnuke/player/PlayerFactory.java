@@ -15,8 +15,13 @@ public final class PlayerFactory {
     private PlayerFactory() {
     }
 
-    public static PlayerRuntime create(String player, String host, boolean launch) throws IOException {
-        PlayerProvider provider = getProvider(player);
+    public static PlayerRuntime create(
+            String player,
+            String host,
+            boolean launch,
+            String executable
+    ) throws IOException {
+        PlayerProvider provider = getProvider(player, executable);
         return createRuntime(
                 provider,
                 resolvePlayerHost(host),
@@ -24,27 +29,30 @@ public final class PlayerFactory {
         );
     }
 
-    private static PlayerProvider getProvider(String player) {
+    private static PlayerProvider getProvider(String player, String executable) {
         if (isNotEmpty(player) && player.equalsIgnoreCase("mpv")) {
-            return new MpvProvider();
+            return new MpvProvider(executable);
         }
         throw new IllegalArgumentException("Unsupported video player: " + player);
     }
 
     private static PlayerRuntime createRuntime(PlayerProvider provider, String host, boolean launch) throws IOException {
         Process process = null;
-
         try {
-            if (launch) {
-                process = provider.launch(host);
-            }
-
             return new PlayerRuntime(provider.connect(host), process);
         } catch (IOException exception) {
-            if (process != null && process.isAlive()) {
-                process.destroy();
+            if (!launch) {
+                destroy(process);
+                throw exception;
             }
-            throw exception;
+            process = provider.launch(host);
+        }
+        return new PlayerRuntime(provider.connect(host), process);
+    }
+
+    private static void destroy(Process process) {
+        if (process != null && process.isAlive()) {
+            process.destroy();
         }
     }
 

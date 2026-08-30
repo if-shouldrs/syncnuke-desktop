@@ -13,14 +13,13 @@ if [ "$exit_code" -eq 0 ]; then
   release_dir="$project_dir/dist/syncnuke-desktop-$version"
   jar="$project_dir/build/libs/syncnuke-desktop-$version-all.jar"
 
-  mkdir -p "$release_dir/scripts/mpv" "$release_dir/scripts/jdk"
-  cp "$jar" "$release_dir/"
-  cp "$project_dir/scripts/mpv/start.sh" "$project_dir/scripts/mpv/start.bat" "$release_dir/scripts/mpv/"
+  mkdir -p "$release_dir/scripts/jdk"
+  cp "$jar" "$release_dir/syncnuke-desktop.jar"
   cp "$project_dir/scripts/jdk/download.sh" "$project_dir/scripts/jdk/download.bat" "$release_dir/scripts/jdk/"
-  cp "$project_dir/scripts/start/start.sh" "$project_dir/scripts/start/start.bat" "$release_dir/"
+  cp "$project_dir/scripts/release/start.sh" "$project_dir/scripts/release/start.bat" "$release_dir/"
   cp "$project_dir/README.md" "$project_dir/LICENSE.md" "$release_dir/"
+  chmod 755 "$release_dir/start.sh" "$release_dir/scripts/jdk/download.sh"
   chmod 644 "$release_dir/LICENSE.md"
-  chmod +x "$release_dir/start.sh"
   printf '%s\n' "$version" > "$release_dir/VERSION"
 
   echo "Release created at $release_dir"

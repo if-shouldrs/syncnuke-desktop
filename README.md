@@ -25,7 +25,7 @@ On Windows, use `scripts\build\build.bat` instead.
 The executable artifact is generated at:
 
 ```text
-build/libs/syncnuke-desktop-*.jar
+build/libs/syncnuke-desktop-*-all.jar
 ```
 
 ## Usage
@@ -39,10 +39,8 @@ On Linux or macOS, create a directory for the Unix socket and pass its expanded 
 ```shell
 mkdir -p "$HOME/.mpv-ipc"
 
-java -jar build/libs/syncnuke-desktop-*.jar \
+java -jar build/libs/syncnuke-desktop-*-all.jar \
   --player mpv \
-  --player-host "$HOME/.mpv-ipc/mpvsocket" \
-  --launch-player \
   --host localhost \
   --port 8999 \
   --protocol datasaver \
@@ -54,10 +52,8 @@ java -jar build/libs/syncnuke-desktop-*.jar \
 On Windows, use a named pipe as the player host:
 
 ```powershell
-java -jar build/libs/syncnuke-desktop-*.jar `
+java -jar build/libs/syncnuke-desktop-*-all.jar `
   --player mpv `
-  --player-host '\\.\pipe\mpvsocket' `
-  --launch-player `
   --host localhost `
   --port 8999 `
   --protocol datasaver `
@@ -79,9 +75,7 @@ On Linux:
   --user alice \
   --room movie-night \
   --host localhost \
-  --port 8999 \
-  --protocol datasaver \
-  --file "/path/to/video.mkv"
+  --port 8999
 ```
 
 On Windows:
@@ -91,27 +85,26 @@ scripts\mpv\start.bat ^
   --user alice ^
   --room movie-night ^
   --host localhost ^
-  --port 8999 ^
-  --protocol datasaver ^
-  --file "C:\path\to\video.mkv"
+  --port 8999
 ```
 
-All other forwarded arguments are optional. Both launchers require `--user` and `--room`; media defaults to the file already loaded in the player when `--file` is omitted.
 
 
 ## Command-line options
 
 | Option | Description | Default |
 | --- | --- | --- |
-| `--player <name>` | Video player provider | `mpv` |
+| `--player <name>` | Video player provider | Optional |
 | `--player-host <host>` | Player IPC socket, named pipe, or network endpoint | Required |
-| `--launch-player` | Launch the selected player before connecting | Disabled |
+| `--player-executable <path>` | Player executable or containing directory | Optional |
+| `--launch-player` | Launch the selected player before connecting | Optional |
+| `--polling-rate <milliseconds>` | Player polling interval | Optional |
 | `--host <host>` | Synchronization server host | `localhost` |
 | `--port <port>` | Synchronization server port | `8999` |
 | `--protocol <protocol>` | Synchronization protocol: `datasaver`, etc. | `datasaver` |
 | `--user <name>` | Username used to join the synchronization server | Required |
 | `--room <name>` | Synchronization room to join | Required |
-| `--file <path>` | Media file to load after connecting | Current player media |
+| `--file <path>` | Media file to load after connecting | Optional |
 
 The player connection can also be configured with JVM system properties:
 
@@ -119,10 +112,9 @@ The player connection can also be configured with JVM system properties:
 java \
   -Dsyncnuke.player.host="$HOME/.mpv-ipc/mpvsocket" \
   -Dsyncnuke.player.launch=true \
-  -jar build/libs/syncnuke-desktop-*.jar
+  -Dsyncnuke.mpv.executable="/path/to/mpv" \
+  -jar build/libs/syncnuke-desktop-*-all.jar
 ```
-
-An explicit `--player-host` takes precedence over `syncnuke.player.host`.
 
 ## License
 

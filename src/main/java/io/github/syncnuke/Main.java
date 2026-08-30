@@ -4,6 +4,8 @@ import io.github.syncnuke.client.SyncManager;
 import io.github.syncnuke.player.PlayerFactory;
 import io.github.syncnuke.player.PlayerRuntime;
 import io.github.syncnuke.player.VideoPlayer;
+import io.github.syncnuke.player.cli.PlayerArguments;
+import io.github.syncnuke.player.cli.PlayerCli;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -22,29 +24,71 @@ public class Main {
     private static final Logger logger = getLogger(Main.class);
 
     public static void main(String[] args) {
-        Environment env = parseArguments(args);
+        System.exit(run(args));
+    }
 
-        try (PlayerRuntime runtime = PlayerFactory.create(
-                env.getPlayer(),
-                env.getPlayerHost(),
-                env.isLaunchPlayer()
-        )) {
+    private static int run(String[] args) {
+        try {
+            Environment env = parseArguments(args);
+            configurePlayer(env);
+            validateSyncArguments(env);
 
-            VideoPlayer player = runtime.getPlayer();
-            try (SyncManager syncManager = getSyncManager(player, env.getPollingRate())) {
-                if (!isEmpty(env.getFilePath())) {
-                    player.load(env.getFilePath());
-                } else {
-                    logger.info("No --file argument supplied; using the media already loaded in the selected player");
+            try (PlayerRuntime runtime = PlayerFactory.create(
+                    env.getPlayer(),
+                    env.getPlayerHost(),
+                    env.isLaunchPlayer(),
+                    env.getPlayerExecutable()
+            )) {
+                VideoPlayer player = runtime.getPlayer();
+                try (SyncManager syncManager = getSyncManager(player, env.getPollingRate())) {
+                    if (!isEmpty(env.getFilePath())) {
+                        player.load(env.getFilePath());
+                    } else {
+                        logger.info("No --file argument supplied; using the media already loaded in the selected player");
+                    }
+
+                    startSyncClient(env, syncManager);
+                    runtime.awaitTermination();
                 }
-
-                startSyncClient(env, syncManager);
-                runtime.awaitTermination();
             }
+            return 0;
+        } catch (IllegalArgumentException exception) {
+            logger.error("Invalid configuration: {}", exception.getMessage());
         } catch (IOException exception) {
             logger.error("Error initializing video player", exception);
         } catch (Exception exception) {
             logger.error("An unexpected error occurred", exception);
+        }
+        return 1;
+    }
+
+    private static void configurePlayer(Environment env) throws IOException {
+        PlayerArguments arguments = PlayerCli.configure(new PlayerArguments(
+                env.getPlayer(),
+                env.getPlayerHost(),
+                env.isLaunchPlayer(),
+                env.getPlayerExecutable()
+        ));
+
+        env.setPlayer(arguments.player());
+        env.setPlayerHost(arguments.host());
+        env.setLaunchPlayer(arguments.launch());
+        env.setPlayerExecutable(arguments.executable());
+    }
+
+    private static void validateSyncArguments(Environment env) {
+        StringBuilder missingArguments = new StringBuilder();
+        if (isEmpty(env.getUser())) {
+            missingArguments.append("--user");
+        }
+        if (isEmpty(env.getRoom())) {
+            if (!missingArguments.isEmpty()) {
+                missingArguments.append(", ");
+            }
+            missingArguments.append("--room");
+        }
+        if (!missingArguments.isEmpty()) {
+            throw new IllegalArgumentException("Missing required option(s): " + missingArguments);
         }
     }
 
@@ -87,6 +131,9 @@ public class Main {
             if (cmd.hasOption("player-host")) {
                 config.setPlayerHost(cmd.getOptionValue("player-host"));
             }
+            if (cmd.hasOption("player-executable")) {
+                config.setPlayerExecutable(cmd.getOptionValue("player-executable"));
+            }
             if (cmd.hasOption("launch-player")) {
                 config.setLaunchPlayer(true);
             }
@@ -110,8 +157,10 @@ public class Main {
             }
             config.setFilePath(cmd.getOptionValue("file"));
         } catch (ParseException exception) {
-            logger.error("Failed to parse command line arguments: {}", exception.getMessage());
-            System.exit(1);
+            throw new IllegalArgumentException(
+                    "Failed to parse command line arguments: " + exception.getMessage(),
+                    exception
+            );
         }
         return config;
     }
@@ -121,12 +170,17 @@ public class Main {
         options.addOption(Option.builder()
                 .longOpt("player")
                 .hasArg()
-                .desc("Video player to use (default: mpv)")
+                .desc("Video player to use (prompts when omitted)")
                 .build());
         options.addOption(Option.builder()
                 .longOpt("player-host")
                 .hasArg()
                 .desc("Video player IPC, pipe, or network host")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("player-executable")
+                .hasArg()
+                .desc("Path to the video player executable")
                 .build());
         options.addOption(Option.builder()
                 .longOpt("launch-player")
@@ -162,13 +216,11 @@ public class Main {
         options.addOption(Option.builder()
                 .longOpt("user")
                 .hasArg()
-                .required()
                 .desc("Username to use")
                 .build());
         options.addOption(Option.builder()
                 .longOpt("room")
                 .hasArg()
-                .required()
                 .desc("Room to join")
                 .build());
         return options;

@@ -13,15 +13,12 @@ set "VERSION=%VERSION:'=%"
 set "RELEASE_DIR=%PROJECT_DIR%\dist\syncnuke-desktop-%VERSION%"
 set "JAR=%PROJECT_DIR%\build\libs\syncnuke-desktop-%VERSION%-all.jar"
 
-if not exist "%RELEASE_DIR%\scripts\mpv" mkdir "%RELEASE_DIR%\scripts\mpv"
 if not exist "%RELEASE_DIR%\scripts\jdk" mkdir "%RELEASE_DIR%\scripts\jdk"
-copy /Y "%JAR%" "%RELEASE_DIR%\" >nul || goto copy_failed
-copy /Y "%PROJECT_DIR%\scripts\mpv\start.sh" "%RELEASE_DIR%\scripts\mpv\" >nul || goto copy_failed
-copy /Y "%PROJECT_DIR%\scripts\mpv\start.bat" "%RELEASE_DIR%\scripts\mpv\" >nul || goto copy_failed
+copy /Y "%JAR%" "%RELEASE_DIR%\syncnuke-desktop.jar" >nul || goto copy_failed
 copy /Y "%PROJECT_DIR%\scripts\jdk\download.sh" "%RELEASE_DIR%\scripts\jdk\" >nul || goto copy_failed
 copy /Y "%PROJECT_DIR%\scripts\jdk\download.bat" "%RELEASE_DIR%\scripts\jdk\" >nul || goto copy_failed
-copy /Y "%PROJECT_DIR%\scripts\start\start.sh" "%RELEASE_DIR%\" >nul || goto copy_failed
-copy /Y "%PROJECT_DIR%\scripts\start\start.bat" "%RELEASE_DIR%\" >nul || goto copy_failed
+copy /Y "%PROJECT_DIR%\scripts\release\start.sh" "%RELEASE_DIR%\" >nul || goto copy_failed
+copy /Y "%PROJECT_DIR%\scripts\release\start.bat" "%RELEASE_DIR%\" >nul || goto copy_failed
 copy /Y "%PROJECT_DIR%\README.md" "%RELEASE_DIR%\" >nul || goto copy_failed
 copy /Y "%PROJECT_DIR%\LICENSE.md" "%RELEASE_DIR%\" >nul || goto copy_failed
 >"%RELEASE_DIR%\VERSION" echo %VERSION%
