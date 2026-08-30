@@ -46,6 +46,8 @@ java -jar build/libs/syncnuke-desktop-*.jar \
   --host localhost \
   --port 8999 \
   --protocol datasaver \
+  --user alice \
+  --room movie-night \
   --file "/path/to/video.mkv"
 ```
 
@@ -59,6 +61,8 @@ java -jar build/libs/syncnuke-desktop-*.jar `
   --host localhost `
   --port 8999 `
   --protocol datasaver `
+  --user alice `
+  --room movie-night `
   --file 'C:\path\to\video.mkv'
 ```
 
@@ -72,6 +76,8 @@ On Linux:
 
 ```shell
 ./scripts/mpv/start.sh \
+  --user alice \
+  --room movie-night \
   --host localhost \
   --port 8999 \
   --protocol datasaver \
@@ -82,13 +88,15 @@ On Windows:
 
 ```batch
 scripts\mpv\start.bat ^
+  --user alice ^
+  --room movie-night ^
   --host localhost ^
   --port 8999 ^
   --protocol datasaver ^
   --file "C:\path\to\video.mkv"
 ```
 
-All forwarded arguments are optional. For example, running `./scripts/mpv/start.sh` or `scripts\mpv\start.bat` without arguments uses the application defaults and does not pass a media file.
+All other forwarded arguments are optional. Both launchers require `--user` and `--room`; media defaults to the file already loaded in the player when `--file` is omitted.
 
 
 ## Command-line options
@@ -101,6 +109,8 @@ All forwarded arguments are optional. For example, running `./scripts/mpv/start.
 | `--host <host>` | Synchronization server host | `localhost` |
 | `--port <port>` | Synchronization server port | `8999` |
 | `--protocol <protocol>` | Synchronization protocol: `datasaver`, etc. | `datasaver` |
+| `--user <name>` | Username used to join the synchronization server | Required |
+| `--room <name>` | Synchronization room to join | Required |
 | `--file <path>` | Media file to load after connecting | Current player media |
 
 The player connection can also be configured with JVM system properties:

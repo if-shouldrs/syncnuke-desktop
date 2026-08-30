@@ -24,6 +24,9 @@ if errorlevel 1 (
   set "JAVA_COMMAND=%RUNTIME_DIR%\jdk\bin\java.exe"
 )
 
+call :validate_sync_options %*
+if errorlevel 1 exit /b 1
+
 call :ensure_mpv
 if errorlevel 1 exit /b 1
 
@@ -36,6 +39,26 @@ if errorlevel 1 exit /b 1
 set "EXIT_CODE=%ERRORLEVEL%"
 pause
 exit /b %EXIT_CODE%
+
+:validate_sync_options
+set "HAS_USER="
+set "HAS_ROOM="
+
+:validate_next_option
+if "%~1"=="" goto validate_options_done
+if /I "%~1"=="--user" set "HAS_USER=1"
+if /I "%~1"=="--room" set "HAS_ROOM=1"
+shift
+goto validate_next_option
+
+:validate_options_done
+if not defined HAS_USER goto missing_sync_options
+if not defined HAS_ROOM goto missing_sync_options
+exit /b 0
+
+:missing_sync_options
+echo Usage: %~nx0 --user ^<name^> --room ^<name^> [options]
+exit /b 1
 
 :ensure_mpv
 where mpv.exe >nul 2>&1

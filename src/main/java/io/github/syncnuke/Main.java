@@ -53,8 +53,8 @@ public class Main {
                 env.getProtocol(),
                 env.getSyncHost(),
                 env.getSyncPort(),
-                "user",
-                "room"
+                env.getUser(),
+                env.getRoom()
         );
     }
 
@@ -101,6 +101,12 @@ public class Main {
             }
             if (cmd.hasOption("protocol")) {
                 config.setProtocol(cmd.getOptionValue("protocol"));
+            }
+            if (cmd.hasOption("user")) {
+                config.setUser(cmd.getOptionValue("user"));
+            }
+            if (cmd.hasOption("room")) {
+                config.setRoom(cmd.getOptionValue("room"));
             }
             config.setFilePath(cmd.getOptionValue("file"));
         } catch (ParseException exception) {
@@ -152,6 +158,18 @@ public class Main {
                 .longOpt("protocol")
                 .hasArg()
                 .desc("Protocol to use (default: datasaver)")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("user")
+                .hasArg()
+                .required()
+                .desc("Username to use")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("room")
+                .hasArg()
+                .required()
+                .desc("Room to join")
                 .build());
         return options;
     }
