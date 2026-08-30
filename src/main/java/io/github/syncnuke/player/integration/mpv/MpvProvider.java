@@ -50,13 +50,17 @@ public final class MpvProvider implements PlayerProvider {
         if (isWindows()) {
             return "\\\\.\\pipe\\mpvsocket";
         }
-        Path socketDirectory = Path.of(System.getProperty("user.home"), ".mpv-ipc");
-        Files.createDirectories(socketDirectory);
-        return socketDirectory.resolve("mpvsocket").toString();
+        return runtimeDirectory().resolve("mpvsocket").toString();
     }
 
     private static boolean isWindows() {
         return System.getProperty("os.name", "").toLowerCase().startsWith("windows");
+    }
+
+    private static Path runtimeDirectory() throws IOException {
+        Path directory = Path.of(System.getProperty("user.home"), ".mpv-ipc");
+        Files.createDirectories(directory);
+        return directory;
     }
 
     private static final class MpvLauncher {
@@ -96,12 +100,17 @@ public final class MpvProvider implements PlayerProvider {
         private Process launch(String host) throws IOException {
             String launchExecutable = findExecutable()
                     .orElseThrow(() -> new IOException("MPV executable not found: " + executable));
+            // Let MPV log to its own file instead of mixing its output into application logs.
+            Path logFile = runtimeDirectory().resolve("mpv.log");
             return new ProcessBuilder(
                     launchExecutable,
                     "--idle=yes",
                     "--force-window=yes",
-                    "--input-ipc-server=" + host
-            ).inheritIO().start();
+                    "--input-ipc-server=" + host,
+                    "--log-file=" + logFile
+            ).redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            .redirectError(ProcessBuilder.Redirect.DISCARD)
+            .start();
         }
 
         private Optional<String> findInDirectory(Path directory) throws IOException {
