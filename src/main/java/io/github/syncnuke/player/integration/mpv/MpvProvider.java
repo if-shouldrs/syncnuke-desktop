@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 @Slf4j
 public final class MpvProvider implements PlayerProvider {
@@ -30,13 +31,28 @@ public final class MpvProvider implements PlayerProvider {
 
     @Override
     public VideoPlayer connect(String host) throws IOException {
+        if (isEmpty(host)) {
+            host = getDefaultHost();
+        }
         return new MpvPlayer(host);
     }
 
     @Override
     public Process launch(String host) throws IOException {
+        if (isEmpty(host)) {
+            host = getDefaultHost();
+        }
         log.info("Starting MPV with IPC endpoint {}", host);
         return launcher.launch(host);
+    }
+
+    private String getDefaultHost() throws IOException {
+        if (isWindows()) {
+            return "\\\\.\\pipe\\mpvsocket";
+        }
+        Path socketDirectory = Path.of(System.getProperty("user.home"), ".mpv-ipc");
+        Files.createDirectories(socketDirectory);
+        return socketDirectory.resolve("mpvsocket").toString();
     }
 
     private static boolean isWindows() {

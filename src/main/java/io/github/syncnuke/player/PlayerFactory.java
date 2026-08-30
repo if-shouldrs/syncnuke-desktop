@@ -61,9 +61,6 @@ public final class PlayerFactory {
         if (isEmpty(host)) {
             host = System.getProperty(PLAYER_HOST_PROPERTY);
         }
-        if (isEmpty(host)) {
-            throw new IllegalArgumentException("Player host must be configured");
-        }
         return host;
     }
 
