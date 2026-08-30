@@ -27,7 +27,6 @@ public final class PlayerCli {
         PlayerArguments selectedArguments = new PlayerArguments(
                 player,
                 arguments.host(),
-                arguments.launch() || interactiveSelection,
                 arguments.executable()
         );
 

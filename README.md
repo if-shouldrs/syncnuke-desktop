@@ -97,7 +97,6 @@ scripts\mpv\start.bat ^
 | `--player <name>` | Video player provider | Optional |
 | `--player-host <host>` | Player IPC socket, named pipe, or network endpoint | Required |
 | `--player-executable <path>` | Player executable or containing directory | Optional |
-| `--launch-player` | Launch the selected player before connecting | Optional |
 | `--polling-rate <milliseconds>` | Player polling interval | Optional |
 | `--host <host>` | Synchronization server host | `localhost` |
 | `--port <port>` | Synchronization server port | `8999` |
@@ -111,7 +110,6 @@ The player connection can also be configured with JVM system properties:
 ```shell
 java \
   -Dsyncnuke.player.host="$HOME/.mpv-ipc/mpvsocket" \
-  -Dsyncnuke.player.launch=true \
   -Dsyncnuke.mpv.executable="/path/to/mpv" \
   -jar build/libs/syncnuke-desktop-*-all.jar
 ```

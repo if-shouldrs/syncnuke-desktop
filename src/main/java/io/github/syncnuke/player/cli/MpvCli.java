@@ -24,7 +24,7 @@ final class MpvCli implements PlayerCliConfigurator {
 
     @Override
     public PlayerArguments configure(PlayerArguments arguments) throws IOException {
-        if (!arguments.launch() || !isEmpty(arguments.executable())) {
+        if (!isEmpty(arguments.executable())) {
             return arguments;
         }
 
@@ -56,7 +56,6 @@ final class MpvCli implements PlayerCliConfigurator {
         return new PlayerArguments(
                 arguments.player(),
                 arguments.host(),
-                true,
                 executable
         );
     }

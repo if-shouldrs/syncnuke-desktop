@@ -36,7 +36,6 @@ public class Main {
             try (PlayerRuntime runtime = PlayerFactory.create(
                     env.getPlayer(),
                     env.getPlayerHost(),
-                    env.isLaunchPlayer(),
                     env.getPlayerExecutable()
             )) {
                 VideoPlayer player = runtime.getPlayer();
@@ -66,13 +65,11 @@ public class Main {
         PlayerArguments arguments = PlayerCli.configure(new PlayerArguments(
                 env.getPlayer(),
                 env.getPlayerHost(),
-                env.isLaunchPlayer(),
                 env.getPlayerExecutable()
         ));
 
         env.setPlayer(arguments.player());
         env.setPlayerHost(arguments.host());
-        env.setLaunchPlayer(arguments.launch());
         env.setPlayerExecutable(arguments.executable());
     }
 
@@ -134,9 +131,6 @@ public class Main {
             if (cmd.hasOption("player-executable")) {
                 config.setPlayerExecutable(cmd.getOptionValue("player-executable"));
             }
-            if (cmd.hasOption("launch-player")) {
-                config.setLaunchPlayer(true);
-            }
             if (cmd.hasOption("polling-rate")) {
                 config.setPollingRate(Long.parseLong(cmd.getOptionValue("polling-rate")));
             }
@@ -181,10 +175,6 @@ public class Main {
                 .longOpt("player-executable")
                 .hasArg()
                 .desc("Path to the video player executable")
-                .build());
-        options.addOption(Option.builder()
-                .longOpt("launch-player")
-                .desc("Launch the selected video player")
                 .build());
         options.addOption(Option.builder()
                 .longOpt("polling-rate")

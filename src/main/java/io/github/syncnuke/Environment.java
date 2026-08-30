@@ -9,7 +9,6 @@ final class Environment {
     private String playerHost;
     private String playerExecutable;
     private String filePath;
-    private boolean launchPlayer;
     private Long pollingRate;
     // Sync Settings
     private String syncHost = "localhost";
