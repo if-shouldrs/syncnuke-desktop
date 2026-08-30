@@ -6,20 +6,6 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 project_dir=$(CDPATH= cd -- "$script_dir/../.." && pwd)
 player_host="$HOME/.mpv-ipc/mpvsocket"
 java_command=java
-has_user=false
-has_room=false
-for argument in "$@"; do
-  case "$argument" in
-    --user) has_user=true ;;
-    --room) has_room=true ;;
-  esac
-done
-
-if [ "$has_user" = false ] || [ "$has_room" = false ]; then
-  echo "Usage: $0 --user <name> --room <name> [options]" >&2
-  exit 1
-fi
-
 if [ -f "$project_dir/VERSION" ]; then
   version=$(sed -n '1p' "$project_dir/VERSION")
   jar="$project_dir/syncnuke-desktop-$version-all.jar"
@@ -71,6 +57,19 @@ if ! command -v mpv >/dev/null 2>&1; then
 
   PATH="$(dirname -- "$mpv_command"):$PATH"
   export PATH
+fi
+has_user=false
+has_room=false
+for argument in "$@"; do
+  case "$argument" in
+    --user) has_user=true ;;
+    --room) has_room=true ;;
+  esac
+done
+
+if [ "$has_user" = false ] || [ "$has_room" = false ]; then
+  echo "Usage: $0 --user <name> --room <name> [options]" >&2
+  exit 1
 fi
 
 mkdir -p "$(dirname -- "$player_host")"

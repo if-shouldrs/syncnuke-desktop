@@ -24,10 +24,10 @@ if errorlevel 1 (
   set "JAVA_COMMAND=%RUNTIME_DIR%\jdk\bin\java.exe"
 )
 
-call :validate_sync_options %*
+call :ensure_mpv
 if errorlevel 1 exit /b 1
 
-call :ensure_mpv
+call :validate_sync_options %*
 if errorlevel 1 exit /b 1
 
 "%JAVA_COMMAND%" "-Dsyncnuke.mpv.executable=%MPV_COMMAND%" -jar "%JAR_PATH%" ^
