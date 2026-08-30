@@ -29,8 +29,20 @@ public final class MpvProvider implements PlayerProvider {
         return launcher.findExecutable();
     }
 
+    public boolean canConnect(String host) {
+        try (MpvPlayer ignored = connectPlayer(host)) {
+            return true;
+        } catch (IOException exception) {
+            return false;
+        }
+    }
+
     @Override
     public VideoPlayer connect(String host) throws IOException {
+        return connectPlayer(host);
+    }
+
+    private MpvPlayer connectPlayer(String host) throws IOException {
         if (isEmpty(host)) {
             host = getDefaultHost();
         }

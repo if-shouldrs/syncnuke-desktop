@@ -28,7 +28,8 @@ final class MpvCli implements PlayerCliConfigurator {
             return arguments;
         }
 
-        if (new MpvProvider(null).findExecutable().isPresent()) {
+        MpvProvider provider = new MpvProvider(null);
+        if (provider.findExecutable().isPresent() || provider.canConnect(arguments.host())) {
             return arguments;
         }
 
