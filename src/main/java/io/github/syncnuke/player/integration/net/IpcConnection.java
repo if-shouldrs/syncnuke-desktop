@@ -21,7 +21,7 @@ import java.time.Duration;
 public final class IpcConnection implements Closeable {
 
     private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
-    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration CONNECT_TIMEOUT = Duration.ofMillis(500);
 
     private final Closeable handle;
     @Getter
@@ -54,7 +54,7 @@ public final class IpcConnection implements Closeable {
         } while (System.nanoTime() < deadline);
 
         throw new IOException("Could not connect to IPC endpoint at '" + ipcPath + "' within " +
-                CONNECT_TIMEOUT.toSeconds() + " seconds", lastException);
+                CONNECT_TIMEOUT.toMillis() + " milliseconds", lastException);
     }
 
     private static IpcConnection openUnixSocket(String ipcPath) throws IOException {
