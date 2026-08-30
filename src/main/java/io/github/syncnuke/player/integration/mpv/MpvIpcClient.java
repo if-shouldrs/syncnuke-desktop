@@ -102,14 +102,13 @@ final class MpvIpcClient implements AutoCloseable {
 
                 if (node.path("request_id").asInt() == reqId) {
                     if (node.has("error") && !"success".equals(node.get("error").asText())) {
-                        throw new IOException("MPV error: " + node.get("error").asText());
+                        throw new IllegalStateException("MPV error: " + node.get("error").asText());
                     }
                     return node.get("data");
                 }
             }
             throw new EOFException("MPV closed the IPC connection");
         } catch (IOException e) {
-            log.error("IPC request {} failed: {}", reqId, e.toString());
             throw new IllegalStateException("MPV IPC request failed.", e);
         }
     }
@@ -119,17 +118,17 @@ final class MpvIpcClient implements AutoCloseable {
         try {
             writer.close();
         } catch (IOException e) {
-            log.error("Failed to close MPV IPC writer: {}", e.toString());
+            log.debug("Failed to close MPV IPC writer: {}", e.toString());
         }
         try {
             reader.close();
         } catch (IOException e) {
-            log.error("Failed to close MPV IPC reader: {}", e.toString());
+            log.debug("Failed to close MPV IPC reader: {}", e.toString());
         }
         try {
             connection.close();
         } catch (IOException e) {
-            log.error("Failed to close MPV IPC connection: {}", e.toString());
+            log.debug("Failed to close MPV IPC connection: {}", e.toString());
         }
     }
 

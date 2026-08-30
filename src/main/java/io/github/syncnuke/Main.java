@@ -56,6 +56,12 @@ public class Main {
             logger.error("Invalid configuration: {}", exception.getMessage());
         } catch (IOException exception) {
             logger.error("Error initializing video player", exception);
+        } catch (IllegalStateException exception) {
+            if (exception.getCause() instanceof IOException) {
+                logger.info("Video player disconnected");
+            } else {
+                logger.error("An unexpected error occurred", exception);
+            }
         } catch (Exception exception) {
             logger.error("An unexpected error occurred", exception);
         }
