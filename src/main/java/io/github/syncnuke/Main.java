@@ -2,6 +2,7 @@ package io.github.syncnuke;
 
 import io.github.syncnuke.client.SyncManager;
 import io.github.syncnuke.player.PlayerFactory;
+import io.github.syncnuke.player.NoVideoLoadedException;
 import io.github.syncnuke.player.PlayerRuntime;
 import io.github.syncnuke.player.VideoPlayer;
 import io.github.syncnuke.player.cli.PlayerArguments;
@@ -104,7 +105,7 @@ public class Main {
         while (true) {
             try {
                 return pollingRate == null ? SyncManager.getInstance(player) : SyncManager.getInstance(player, pollingRate);
-            } catch (RuntimeException exception) {
+            } catch (NoVideoLoadedException exception) {
                 if (++retries > 10) {
                     throw exception;
                 }
