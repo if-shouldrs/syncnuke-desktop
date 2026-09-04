@@ -16,4 +16,5 @@ final class Environment {
     private String protocol = "datasaver";
     private String user;
     private String room;
+    private String password;
 }

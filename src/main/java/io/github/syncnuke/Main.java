@@ -102,7 +102,8 @@ public class Main {
                 env.getSyncHost(),
                 env.getSyncPort(),
                 env.getUser(),
-                env.getRoom()
+                env.getRoom(),
+                env.getPassword()
         );
     }
 
@@ -155,6 +156,9 @@ public class Main {
             }
             if (cmd.hasOption("room")) {
                 config.setRoom(cmd.getOptionValue("room"));
+            }
+            if (cmd.hasOption("password")) {
+                config.setPassword(cmd.getOptionValue("password"));
             }
             config.setFilePath(cmd.getOptionValue("file"));
         } catch (ParseException exception) {
@@ -219,6 +223,11 @@ public class Main {
                 .longOpt("room")
                 .hasArg()
                 .desc("Room to join")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("password")
+                .hasArg()
+                .desc("Password for the room")
                 .build());
         return options;
     }
