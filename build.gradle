@@ -18,8 +18,8 @@ repositories {
 }
 
 dependencies {
-    // SyncNuke Core (assumes it's already built and available locally or published)
-    implementation project(':syncnuke-core')
+    // SyncNuke Core
+    implementation "io.github.syncnuke:syncnuke-core:0.1.0"
 
     // Jackson
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.2'
