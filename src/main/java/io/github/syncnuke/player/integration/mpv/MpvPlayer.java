@@ -52,13 +52,17 @@ public final class MpvPlayer implements VideoPlayer {
 
     @Override
     public PlayerState getStatus() {
-        ensureVideoLoaded();
-        PlayerState status = new PlayerState();
-        status.setPlaybackState(isPaused() ? PlaybackState.PAUSED : PlaybackState.PLAYING);
-        status.setPosition(getPosition());
-        status.setPlaybackSpeed(getPlaybackSpeed());
-        status.setLastUpdateTime(System.currentTimeMillis());
-        return status;
+        try {
+            ensureVideoLoaded();
+            PlayerState status = new PlayerState();
+            status.setPlaybackState(isPaused() ? PlaybackState.PAUSED : PlaybackState.PLAYING);
+            status.setPosition(getPosition());
+            status.setPlaybackSpeed(getPlaybackSpeed());
+            status.setLastUpdateTime(System.currentTimeMillis());
+            return status;
+        } catch (MpvIpcClient.MpvPropertyUnavailableException exception) {
+            throw new NoVideoLoadedException();
+        }
     }
 
     private double getPosition() {

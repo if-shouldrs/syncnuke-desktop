@@ -53,7 +53,10 @@ final class MpvIpcClient implements AutoCloseable {
 
     <T> T getProperty(String name, Class<T> type) {
         JsonNode value = sendCommandForResult(createCommand("get_property", name));
-        if (value == null || !isExpectedType(value, type)) {
+        if (value == null || value.isNull()) {
+            throw new MpvPropertyUnavailableException(name);
+        }
+        if (!isExpectedType(value, type)) {
             throw new IllegalStateException("MPV returned an invalid " + name + " value");
         }
 
@@ -102,6 +105,9 @@ final class MpvIpcClient implements AutoCloseable {
 
                 if (node.path("request_id").asInt() == reqId) {
                     if (node.has("error") && !"success".equals(node.get("error").asText())) {
+                        if ("property unavailable".equals(node.get("error").asText())) {
+                            throw new MpvPropertyUnavailableException(command.path(1).asText());
+                        }
                         throw new IllegalStateException("MPV error: " + node.get("error").asText());
                     }
                     return node.get("data");
@@ -129,6 +135,12 @@ final class MpvIpcClient implements AutoCloseable {
             connection.close();
         } catch (IOException e) {
             log.debug("Failed to close MPV IPC connection: {}", e.toString());
+        }
+    }
+
+    static final class MpvPropertyUnavailableException extends IllegalStateException {
+        MpvPropertyUnavailableException(String property) {
+            super("MPV property is unavailable: " + property);
         }
     }
 
