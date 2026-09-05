@@ -41,14 +41,21 @@ public class Main {
             )) {
                 VideoPlayer player = runtime.getPlayer();
                 try (SyncManager syncManager = getSyncManager(player, env.getPollingRate())) {
-                    if (!isEmpty(env.getFilePath())) {
-                        player.load(env.getFilePath());
-                    } else {
-                        logger.info("No --file argument supplied; using the media already loaded in the selected player");
-                    }
+                    runtime.addShutdownTrigger(syncManager::close);
+                    Thread shutdownHook = getShutdownHook(runtime);
+                    Runtime.getRuntime().addShutdownHook(shutdownHook);
+                    try {
+                        if (!isEmpty(env.getFilePath())) {
+                            player.load(env.getFilePath());
+                        } else {
+                            logger.info("No --file argument supplied; using the media already loaded in the selected player");
+                        }
 
-                    startSyncClient(env, syncManager);
-                    runtime.awaitTermination();
+                        startSyncClient(env, syncManager);
+                        runtime.awaitTermination();
+                    } finally {
+                        Runtime.getRuntime().removeShutdownHook(shutdownHook);
+                    }
                 }
             }
             return 0;
@@ -66,6 +73,13 @@ public class Main {
             logger.error("An unexpected error occurred", exception);
         }
         return 1;
+    }
+
+    private static Thread getShutdownHook(PlayerRuntime runtime) {
+        return new Thread(() -> {
+            logger.info("Closing player runtime...");
+            runtime.close();
+        }, "syncnuke-shutdown");
     }
 
     private static void configurePlayer(Environment env) throws IOException {
