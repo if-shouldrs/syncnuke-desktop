@@ -89,18 +89,18 @@ scripts\mpv\start.bat ^
 
 ## Command-line options
 
-| Option | Description | Default |
-| --- | --- | --- |
-| `--player <name>` | Video player provider | Optional |
-| `--player-host <host>` | Player IPC socket, named pipe, or network endpoint | Required |
-| `--player-executable <path>` | Player executable or containing directory | Optional |
-| `--polling-rate <milliseconds>` | Player polling interval | Optional |
+| Option | Description | Default               |
+| --- | --- |-----------------------|
+| `--user <name>` | Username used to join the synchronization server | Required              |
+| `--room <name>` | Synchronization room to join | Required              |
+| `--file <path>` | Media file to load after connecting | Optional              |
+| `--protocol <protocol>` | Synchronization protocol: `datasaver`, etc. | `datasaver`           |
+| `--player <name>` | Video player provider | Optional              |
+| `--player-host <host>` | Player IPC socket, named pipe, or network endpoint | Optional              |
+| `--player-executable <path>` | Player executable or containing directory | Optional              |
+| `--polling-rate <milliseconds>` | Player polling interval | Optional              |
 | `--host <host>` | SyncNuke server host | `master.syncnuke.com` |
-| `--port <port>` | SyncNuke server port | `65344` |
-| `--protocol <protocol>` | Synchronization protocol: `datasaver`, etc. | `datasaver` |
-| `--user <name>` | Username used to join the synchronization server | Required |
-| `--room <name>` | Synchronization room to join | Required |
-| `--file <path>` | Media file to load after connecting | Optional |
+| `--port <port>` | SyncNuke server port | `65344`               |
 
 The player connection can also be configured with JVM system properties:
 
