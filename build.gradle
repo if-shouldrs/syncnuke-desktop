@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'io.github.syncnuke'
-version = '0.1.1'
+version = '0.1.2'
 
 java {
     toolchain {
@@ -19,7 +19,7 @@ repositories {
 
 dependencies {
     // SyncNuke Core
-    implementation "io.github.syncnuke:syncnuke-core:0.2.0"
+    implementation "io.github.syncnuke:syncnuke-core:0.3.0"
 
     // Jackson
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.2'
