@@ -19,7 +19,7 @@ repositories {
 
 dependencies {
     // SyncNuke Core
-    implementation "io.github.syncnuke:syncnuke-core:0.1.0"
+    implementation "io.github.syncnuke:syncnuke-core:0.2.0"
 
     // Jackson
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.2'
