@@ -8,7 +8,6 @@ MPV is currently the only supported player, more to come in the future.
 
 - Java 21
 - MPV Player
-- A running SyncNuke-compatible server
 
 ## Building
 
@@ -93,14 +92,13 @@ scripts\mpv\start.bat ^
 | --- | --- |-----------------------|
 | `--user <name>` | Username used to join the synchronization server | Required              |
 | `--room <name>` | Synchronization room to join | Required              |
+| `--password <password>` | Room password | Optional              |
 | `--file <path>` | Media file to load after connecting | Optional              |
 | `--protocol <protocol>` | Synchronization protocol: `datasaver`, etc. | `datasaver`           |
 | `--player <name>` | Video player provider | Optional              |
 | `--player-host <host>` | Player IPC socket, named pipe, or network endpoint | Optional              |
 | `--player-executable <path>` | Player executable or containing directory | Optional              |
 | `--polling-rate <milliseconds>` | Player polling interval | Optional              |
-| `--host <host>` | SyncNuke server host | `master.syncnuke.com` |
-| `--port <port>` | SyncNuke server port | `65344`               |
 
 The player connection can also be configured with JVM system properties:
 
@@ -110,6 +108,10 @@ java \
   -Dsyncnuke.mpv.executable="/path/to/mpv" \
   -jar build/libs/syncnuke-desktop-*-all.jar
 ```
+
+## Usability
+
+This application  is still in early development, it's expected behaviour in terms of usability will vary a lot before release `1.0.0`, please be patient. Thank you!
 
 ## License
 
