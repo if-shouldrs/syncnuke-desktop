@@ -41,11 +41,10 @@ mkdir -p "$HOME/.mpv-ipc"
 
 java -jar build/libs/syncnuke-desktop-*-all.jar \
   --player mpv \
-  --host master.syncnuke.com \
-  --port 65344 \
   --protocol datasaver \
   --user alice \
   --room movie-night \
+  --password myRoomPassword \
   --file "/path/to/video.mkv"
 ```
 
@@ -54,11 +53,10 @@ On Windows, use a named pipe as the player host:
 ```powershell
 java -jar build/libs/syncnuke-desktop-*-all.jar `
   --player mpv `
-  --host master.syncnuke.com `
-          --port 65344 `
   --protocol datasaver `
   --user alice `
   --room movie-night `
+  --password myRoomPassword `
   --file 'C:\path\to\video.mkv'
 ```
 
@@ -74,8 +72,7 @@ On Linux:
 ./scripts/mpv/start.sh \
   --user alice \
   --room movie-night \
-  --host master.syncnuke.com \
-  --port 65344
+  --password myRoomPassword
 ```
 
 On Windows:
@@ -84,8 +81,7 @@ On Windows:
 scripts\mpv\start.bat ^
   --user alice ^
   --room movie-night ^
-  --host master.syncnuke.com ^
-  --port 65344
+  --password myRoomPassword
  */
 
 
@@ -98,8 +94,8 @@ scripts\mpv\start.bat ^
 | `--player-host <host>` | Player IPC socket, named pipe, or network endpoint | Required |
 | `--player-executable <path>` | Player executable or containing directory | Optional |
 | `--polling-rate <milliseconds>` | Player polling interval | Optional |
-| `--host <host>` | Synchronization server host | `master.syncnuke.com` |
-| `--port <port>` | Synchronization server port | `65344` |
+| `--host <host>` | SyncNuke server host | `master.syncnuke.com` |
+| `--port <port>` | SyncNuke server port | `65344` |
 | `--protocol <protocol>` | Synchronization protocol: `datasaver`, etc. | `datasaver` |
 | `--user <name>` | Username used to join the synchronization server | Required |
 | `--room <name>` | Synchronization room to join | Required |
