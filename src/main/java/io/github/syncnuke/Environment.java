@@ -11,8 +11,8 @@ final class Environment {
     private String filePath;
     private Long pollingRate;
     // Sync Settings
-    private String syncHost = "localhost";
-    private int syncPort = 8999;
+    private String syncHost = "master.syncnuke.com";
+    private int syncPort = 65344;
     private String protocol = "datasaver";
     private String user;
     private String room;

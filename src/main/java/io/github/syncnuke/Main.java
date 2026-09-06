@@ -210,12 +210,12 @@ public class Main {
         options.addOption(Option.builder()
                 .longOpt("host")
                 .hasArg()
-                .desc("Server host (default: localhost)")
+                .desc("Server host (default: master.syncnuke.com)")
                 .build());
         options.addOption(Option.builder()
                 .longOpt("port")
                 .hasArg()
-                .desc("Server port (default: 8999)")
+                .desc("Server port (default: 65344)")
                 .type(Number.class)
                 .build());
         options.addOption(Option.builder()
