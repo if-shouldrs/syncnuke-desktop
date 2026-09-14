@@ -7,9 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public final class PlayerRuntime implements AutoCloseable {
+
+    private static final long HEALTH_CHECK_INTERVAL_SECONDS = 1;
 
     @Getter
     private final VideoPlayer player;
@@ -36,7 +39,9 @@ public final class PlayerRuntime implements AutoCloseable {
     }
 
     public void awaitTermination() throws InterruptedException {
-        termination.await();
+        while (!termination.await(HEALTH_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS)) {
+            player.getStatus();
+        }
     }
 
     @Override
