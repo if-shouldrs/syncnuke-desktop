@@ -18,9 +18,13 @@ public final class PlayerFactory {
             String player,
             String host,
             String executable
-    ) throws IOException {
-        PlayerProvider provider = getProvider(player, executable);
-        return createRuntime(provider, resolvePlayerHost(host));
+    ) {
+        try {
+            PlayerProvider provider = getProvider(player, executable);
+            return createRuntime(provider, resolvePlayerHost(host));
+        } catch (IOException exception) {
+            throw new PlayerConnectionException("Failed to connect to video player", exception);
+        }
     }
 
     private static PlayerProvider getProvider(String player, String executable) {

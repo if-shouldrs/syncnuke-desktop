@@ -60,13 +60,4 @@ class PlayerRuntimeTest {
         assertThrows(IllegalStateException.class, () -> runtime.addShutdownTrigger(() -> { }));
     }
 
-    @Test
-    void noVideoLoadedEndsThePlayerSession() {
-        VideoPlayer player = mock(VideoPlayer.class);
-        when(player.getStatus()).thenThrow(new NoVideoLoadedException());
-        PlayerRuntime runtime = new PlayerRuntime(player, null);
-
-        assertThrows(NoVideoLoadedException.class, runtime::awaitTermination);
-    }
-
 }

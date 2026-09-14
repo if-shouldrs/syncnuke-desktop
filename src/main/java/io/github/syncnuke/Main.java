@@ -1,10 +1,5 @@
 package io.github.syncnuke;
 
-import io.github.syncnuke.client.SyncManager;
-import io.github.syncnuke.player.NoVideoLoadedException;
-import io.github.syncnuke.player.PlayerFactory;
-import io.github.syncnuke.player.PlayerRuntime;
-import io.github.syncnuke.player.VideoPlayer;
 import io.github.syncnuke.player.cli.PlayerArguments;
 import io.github.syncnuke.player.cli.PlayerCli;
 import org.apache.commons.cli.CommandLine;
@@ -22,7 +17,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class Main {
 
-    private static final long RETRY_DELAY_MILLIS = 3000;
     private static final Logger logger = getLogger(Main.class);
 
     public static void main(String[] args) {
@@ -35,81 +29,42 @@ public class Main {
             configurePlayer(env);
             validateSyncArguments(env);
 
-            while (true) {
+            try (SessionManager sessionManager = new SessionManager(env)) {
+                Thread shutdownHook = getShutdownHook(sessionManager);
+                Runtime.getRuntime().addShutdownHook(shutdownHook);
                 try {
-                    runPlayerSession(env);
-                    logger.info("Video player disconnected");
-                } catch (IOException exception) {
-                    logger.info("Video player is not available; retrying in {} seconds", RETRY_DELAY_MILLIS / 1000);
-                    logger.debug("Video player is not available", exception);
-                } catch (IllegalStateException exception) {
-                    if (!isConnectionFailure(exception)) {
-                        throw exception;
-                    }
-                    logger.info("Video player disconnected");
-                    logger.debug("Video player connection failure", exception);
+                    sessionManager.start();
+                    sessionManager.awaitTermination();
+                } finally {
+                    removeShutdownHook(shutdownHook);
                 }
-                waitBeforeRetry();
             }
+            return 0;
         } catch (IllegalArgumentException exception) {
             logger.error("Invalid configuration: {}", exception.getMessage());
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            logger.info("SyncNuke interrupted");
+            return 0;
         } catch (Exception exception) {
             logger.error("An unexpected error occurred", exception);
         }
         return 1;
     }
 
-    private static void runPlayerSession(Environment env) throws IOException, InterruptedException {
-        try (PlayerRuntime runtime = PlayerFactory.create(
-                env.getPlayer(),
-                env.getPlayerHost(),
-                env.getPlayerExecutable()
-        )) {
-            VideoPlayer player = runtime.getPlayer();
-            Thread shutdownHook = getShutdownHook(runtime);
-            Runtime.getRuntime().addShutdownHook(shutdownHook);
-            try {
-                loadConfiguredVideo(env, player);
-                try (SyncManager syncManager = waitForSyncManager(player, env.getPollingRate())) {
-                    runtime.addShutdownTrigger(syncManager::close);
-                    runSyncSession(env, runtime, syncManager);
-                }
-            } finally {
-                Runtime.getRuntime().removeShutdownHook(shutdownHook);
-            }
-        }
-    }
-
-    private static void loadConfiguredVideo(Environment env, VideoPlayer player) {
-        if (!isEmpty(env.getFilePath())) {
-            player.load(env.getFilePath());
-        } else {
-            logger.debug("No --file argument supplied; using the media already loaded in the selected player");
-        }
-    }
-
-    private static void runSyncSession(
-            Environment env,
-            PlayerRuntime runtime,
-            SyncManager syncManager
-    ) throws InterruptedException {
-        while (true) {
-            try {
-                startSyncClient(env, syncManager);
-                runtime.awaitTermination();
-                return;
-            } catch (NoVideoLoadedException exception) {
-                syncManager.stop();
-                waitForVideo(runtime.getPlayer());
-            }
-        }
-    }
-
-    private static Thread getShutdownHook(PlayerRuntime runtime) {
+    private static Thread getShutdownHook(SessionManager sessionManager) {
         return new Thread(() -> {
-            logger.info("Closing player runtime...");
-            runtime.close();
+            logger.info("Closing session manager...");
+            sessionManager.close();
         }, "syncnuke-shutdown");
+    }
+
+    private static void removeShutdownHook(Thread shutdownHook) {
+        try {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+        } catch (IllegalStateException ignored) {
+            // JVM shutdown is already in progress.
+        }
     }
 
     private static void configurePlayer(Environment env) throws IOException {
@@ -138,50 +93,6 @@ public class Main {
         if (!missingArguments.isEmpty()) {
             throw new IllegalArgumentException("Missing required option(s): " + missingArguments);
         }
-    }
-
-    private static void startSyncClient(Environment env, SyncManager syncManager) {
-        syncManager.start(
-                env.getProtocol(),
-                env.getSyncHost(),
-                env.getSyncPort(),
-                env.getUser(),
-                env.getRoom(),
-                env.getPassword()
-        );
-    }
-
-    private static SyncManager waitForSyncManager(VideoPlayer player, Long pollingRate) throws InterruptedException {
-        while (true) {
-            try {
-                return pollingRate == null
-                        ? SyncManager.getInstance(player)
-                        : SyncManager.getInstance(player, pollingRate);
-            } catch (NoVideoLoadedException exception) {
-                waitForVideo(player);
-            }
-        }
-    }
-
-    private static void waitBeforeRetry() throws InterruptedException {
-        Thread.sleep(RETRY_DELAY_MILLIS);
-    }
-
-    private static void waitForVideo(VideoPlayer player) throws InterruptedException {
-        logger.info("No video is currently loaded; waiting for a video to be loaded");
-        while (true) {
-            try {
-                player.getStatus();
-                logger.info("Video loaded; reconnecting to the sync server");
-                return;
-            } catch (NoVideoLoadedException exception) {
-                waitBeforeRetry();
-            }
-        }
-    }
-
-    private static boolean isConnectionFailure(IllegalStateException exception) {
-        return exception.getCause() instanceof IOException;
     }
 
     private static Environment parseArguments(String[] args) {
