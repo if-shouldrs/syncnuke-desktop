@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.syncnuke.player.PlayerConnectionException;
 import io.github.syncnuke.player.integration.net.IpcConnection;
 import lombok.extern.slf4j.Slf4j;
 
@@ -115,7 +116,7 @@ final class MpvIpcClient implements AutoCloseable {
             }
             throw new EOFException("MPV closed the IPC connection");
         } catch (IOException e) {
-            throw new IllegalStateException("MPV IPC request failed.", e);
+            throw new PlayerConnectionException("MPV IPC request failed", e);
         }
     }
 

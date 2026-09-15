@@ -44,7 +44,7 @@ final class MpvCli implements PlayerCliConfigurator {
 
         String executable = promptForExecutable();
         if (isEmpty(executable)) {
-            throw new IOException("An MPV executable path is required");
+            return arguments;
         }
 
         String resolvedExecutable = new MpvProvider(executable).findExecutable()
@@ -76,7 +76,7 @@ final class MpvCli implements PlayerCliConfigurator {
     }
 
     private String promptForExecutable() throws IOException {
-        output.print("MPV was not found on PATH. Enter the path to the MPV executable: ");
+        output.print("MPV was not found on PATH. Enter the path to the MPV executable (or press Enter to skip): ");
         output.flush();
 
         String executable = input.readLine();
