@@ -1,6 +1,6 @@
 # SyncNuke Desktop
 
-SyncNuke Desktop connects a local media player to a SyncNuke synchronization server. It translates synchronized playback state into player commands while keeping player-specific integrations separate from the synchronization core.
+SyncNuke Desktop connects a local media player to a [SyncNuke](https://syncnuke.com/) synchronization server. It translates synchronized playback state into player commands while keeping player-specific integrations separate from the synchronization core.
 
 MPV is currently the only supported player, more to come in the future.
 
