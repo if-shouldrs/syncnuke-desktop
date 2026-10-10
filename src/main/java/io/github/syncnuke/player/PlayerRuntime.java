@@ -12,13 +12,13 @@ import java.util.concurrent.CountDownLatch;
 public final class PlayerRuntime implements AutoCloseable {
 
     @Getter
-    private final VideoPlayer player;
+    private final MediaPlayer player;
     private final Process ownedProcess;
     private final CountDownLatch termination = new CountDownLatch(1);
     private final List<Runnable> shutdownSteps = new ArrayList<>();
     private volatile boolean shuttingDown;
 
-    PlayerRuntime(VideoPlayer player, Process ownedProcess) {
+    PlayerRuntime(MediaPlayer player, Process ownedProcess) {
         this.player = player;
         this.ownedProcess = ownedProcess;
 

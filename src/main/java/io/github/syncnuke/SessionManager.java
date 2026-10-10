@@ -1,11 +1,11 @@
 package io.github.syncnuke;
 
 import io.github.syncnuke.client.SyncManager;
-import io.github.syncnuke.player.NoVideoLoadedException;
+import io.github.syncnuke.player.NoMediaLoadedException;
 import io.github.syncnuke.player.PlayerConnectionException;
 import io.github.syncnuke.player.PlayerFactory;
 import io.github.syncnuke.player.PlayerRuntime;
-import io.github.syncnuke.player.VideoPlayer;
+import io.github.syncnuke.player.MediaPlayer;
 import io.github.syncnuke.session.PlayerRuntimeFactory;
 import io.github.syncnuke.session.SessionException;
 import io.github.syncnuke.session.State;
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /**
- * Coordinates the video-player lifecycle with the corresponding sync session.
+ * Coordinates the media-player lifecycle with the corresponding sync session.
  * Each state check schedules its successor only after it completes, preventing
  * overlapping connection attempts.
  */
@@ -124,22 +124,22 @@ final class SessionManager implements AutoCloseable {
         try {
             ensurePlayerRuntime();
             ensureSyncSession();
-        } catch (NoVideoLoadedException exception) {
+        } catch (NoMediaLoadedException exception) {
             if (syncManager != null) {
                 syncManager.stop();
             }
-            if (state != State.LOADING_VIDEO) {
-                log.info("No video is currently loaded; waiting for a video to be loaded");
+            if (state != State.LOADING_MEDIA) {
+                log.info("No media is currently loaded; waiting for a media to be loaded");
             }
-            state = State.LOADING_VIDEO;
+            state = State.LOADING_MEDIA;
             nextDelay = RETRY_DELAY_MILLIS;
         } catch (PlayerConnectionException exception) {
             if (playerRuntime == null) {
-                log.info("Video player is not available; retrying in {} seconds", RETRY_DELAY_MILLIS / 1000);
+                log.info("Media player is not available; retrying in {} seconds", RETRY_DELAY_MILLIS / 1000);
             } else {
-                log.info("Video player disconnected");
+                log.info("Media player disconnected");
             }
-            log.debug("Video player connection failure", exception);
+            log.debug("Media player connection failure", exception);
             closePlayerRuntime();
             state = State.LOADING_PLAYER;
             nextDelay = RETRY_DELAY_MILLIS;
@@ -164,7 +164,7 @@ final class SessionManager implements AutoCloseable {
     }
 
     private void ensureSyncSession() {
-        VideoPlayer player = playerRuntime.getPlayer();
+        MediaPlayer player = playerRuntime.getPlayer();
         player.getStatus();
 
         if (syncManager == null) {
@@ -181,8 +181,8 @@ final class SessionManager implements AutoCloseable {
                 environment.getPassword()
         );
 
-        if (state == State.LOADING_VIDEO) {
-            log.info("Video loaded; reconnecting to the sync server");
+        if (state == State.LOADING_MEDIA) {
+            log.info("Media loaded; reconnecting to the sync server");
         }
         state = State.SYNCING;
     }

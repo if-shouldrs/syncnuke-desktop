@@ -23,7 +23,7 @@ public final class PlayerFactory {
             PlayerProvider provider = getProvider(player, executable);
             return createRuntime(provider, resolvePlayerHost(host));
         } catch (IOException exception) {
-            throw new PlayerConnectionException("Failed to connect to video player", exception);
+            throw new PlayerConnectionException("Failed to connect to media player", exception);
         }
     }
 
@@ -31,7 +31,7 @@ public final class PlayerFactory {
         if (isNotEmpty(player) && player.equalsIgnoreCase("mpv")) {
             return new MpvProvider(executable);
         }
-        throw new IllegalArgumentException("Unsupported video player: " + player);
+        throw new IllegalArgumentException("Unsupported media player: " + player);
     }
 
     private static PlayerRuntime createRuntime(PlayerProvider provider, String host) throws IOException {

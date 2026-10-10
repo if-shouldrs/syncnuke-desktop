@@ -1,9 +1,9 @@
 package io.github.syncnuke.session;
 
 import io.github.syncnuke.client.SyncManager;
-import io.github.syncnuke.player.VideoPlayer;
+import io.github.syncnuke.player.MediaPlayer;
 
 @FunctionalInterface
 public interface SyncManagerFactory {
-    SyncManager create(VideoPlayer player);
+    SyncManager create(MediaPlayer player);
 }
