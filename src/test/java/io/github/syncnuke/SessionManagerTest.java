@@ -1,10 +1,10 @@
 package io.github.syncnuke;
 
 import io.github.syncnuke.client.SyncManager;
-import io.github.syncnuke.player.NoVideoLoadedException;
+import io.github.syncnuke.player.NoMediaLoadedException;
 import io.github.syncnuke.player.PlayerConnectionException;
 import io.github.syncnuke.player.PlayerRuntime;
-import io.github.syncnuke.player.VideoPlayer;
+import io.github.syncnuke.player.MediaPlayer;
 import io.github.syncnuke.session.PlayerRuntimeFactory;
 import io.github.syncnuke.session.SessionException;
 import io.github.syncnuke.session.SyncManagerFactory;
@@ -43,7 +43,7 @@ class SessionManagerTest {
     private PlayerRuntimeFactory playerRuntimeFactory;
     private SyncManagerFactory syncManagerFactory;
     private PlayerRuntime playerRuntime;
-    private VideoPlayer player;
+    private MediaPlayer player;
     private SyncManager syncManager;
     private SessionManager sessionManager;
 
@@ -69,7 +69,7 @@ class SessionManagerTest {
         playerRuntimeFactory = mock(PlayerRuntimeFactory.class);
         syncManagerFactory = mock(SyncManagerFactory.class);
         playerRuntime = mock(PlayerRuntime.class);
-        player = mock(VideoPlayer.class);
+        player = mock(MediaPlayer.class);
         syncManager = mock(SyncManager.class);
 
         when(playerRuntimeFactory.create()).thenReturn(playerRuntime);
@@ -103,21 +103,21 @@ class SessionManagerTest {
     }
 
     @Test
-    void configuredVideoLoadsBeforeSyncSessionStarts() throws Exception {
-        environment.setFilePath("video.mkv");
+    void configuredMediaLoadsBeforeSyncSessionStarts() throws Exception {
+        environment.setFilePath("media.mkv");
 
         sessionManager.start();
         runNextUpdate();
 
         InOrder order = inOrder(player, syncManagerFactory);
-        order.verify(player).load("video.mkv");
+        order.verify(player).load("media.mkv");
         order.verify(player).getStatus();
         order.verify(syncManagerFactory).create(player);
     }
 
     @Test
-    void missingVideoRetainsPlayerAndRetriesLater() throws Exception {
-        when(player.getStatus()).thenThrow(new NoVideoLoadedException());
+    void missingMediaRetainsPlayerAndRetriesLater() throws Exception {
+        when(player.getStatus()).thenThrow(new NoMediaLoadedException());
 
         sessionManager.start();
         runNextUpdate();
@@ -140,10 +140,10 @@ class SessionManagerTest {
     }
 
     @Test
-    void removedVideoStopsSyncWithoutClosingPlayer() throws Exception {
+    void removedMediaStopsSyncWithoutClosingPlayer() throws Exception {
         sessionManager.start();
         runNextUpdate();
-        when(player.getStatus()).thenThrow(new NoVideoLoadedException());
+        when(player.getStatus()).thenThrow(new NoMediaLoadedException());
 
         runNextUpdate();
 
@@ -153,11 +153,11 @@ class SessionManagerTest {
     }
 
     @Test
-    void loadedVideoRestartsSyncOnExistingPlayer() throws Exception {
+    void loadedMediaRestartsSyncOnExistingPlayer() throws Exception {
         sessionManager.start();
         runNextUpdate();
         when(player.getStatus())
-                .thenThrow(new NoVideoLoadedException())
+                .thenThrow(new NoMediaLoadedException())
                 .thenReturn(null);
 
         runNextUpdate();

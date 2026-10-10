@@ -148,17 +148,17 @@ public class Main {
         options.addOption(Option.builder()
                 .longOpt("player")
                 .hasArg()
-                .desc("Video player to use (prompts when omitted)")
+                .desc("Media player to use (prompts when omitted)")
                 .build());
         options.addOption(Option.builder()
                 .longOpt("player-host")
                 .hasArg()
-                .desc("Video player IPC, pipe, or network host")
+                .desc("Media player IPC, pipe, or network host")
                 .build());
         options.addOption(Option.builder()
                 .longOpt("player-executable")
                 .hasArg()
-                .desc("Path to the video player executable")
+                .desc("Path to the media player executable")
                 .build());
         options.addOption(Option.builder()
                 .longOpt("polling-rate")

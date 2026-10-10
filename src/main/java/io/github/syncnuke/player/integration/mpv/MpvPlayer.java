@@ -1,7 +1,7 @@
 package io.github.syncnuke.player.integration.mpv;
 
-import io.github.syncnuke.player.NoVideoLoadedException;
-import io.github.syncnuke.player.VideoPlayer;
+import io.github.syncnuke.player.NoMediaLoadedException;
+import io.github.syncnuke.player.MediaPlayer;
 import io.github.syncnuke.player.data.PlaybackState;
 import io.github.syncnuke.player.data.PlayerState;
 import lombok.NonNull;
@@ -11,7 +11,7 @@ import java.io.File;
 import java.io.IOException;
 
 @Slf4j
-public final class MpvPlayer implements VideoPlayer {
+public final class MpvPlayer implements MediaPlayer {
 
     private final MpvIpcClient ipcClient;
 
@@ -22,13 +22,13 @@ public final class MpvPlayer implements VideoPlayer {
 
     @Override
     public void play() {
-        ensureVideoLoaded();
+        ensureMediaLoaded();
         ipcClient.setProperty("pause", false);
     }
 
     @Override
     public void pause() {
-        ensureVideoLoaded();
+        ensureMediaLoaded();
         ipcClient.setProperty("pause", true);
     }
 
@@ -37,7 +37,7 @@ public final class MpvPlayer implements VideoPlayer {
         if (!Double.isFinite(position) || position < 0) {
             throw new IllegalArgumentException("Position must be a non-negative finite number.");
         }
-        ensureVideoLoaded();
+        ensureMediaLoaded();
         ipcClient.setProperty("time-pos", position);
     }
 
@@ -46,14 +46,14 @@ public final class MpvPlayer implements VideoPlayer {
         if (!Double.isFinite(playbackSpeed) || playbackSpeed <= 0) {
             throw new IllegalArgumentException("Playback speed must be a positive finite number.");
         }
-        ensureVideoLoaded();
+        ensureMediaLoaded();
         ipcClient.setProperty("speed", playbackSpeed);
     }
 
     @Override
     public PlayerState getStatus() {
         try {
-            ensureVideoLoaded();
+            ensureMediaLoaded();
             PlayerState status = new PlayerState();
             status.setPlaybackState(isPaused() ? PlaybackState.PAUSED : PlaybackState.PLAYING);
             status.setPosition(getPosition());
@@ -61,7 +61,7 @@ public final class MpvPlayer implements VideoPlayer {
             status.setLastUpdateTime(System.currentTimeMillis());
             return status;
         } catch (MpvIpcClient.MpvPropertyUnavailableException exception) {
-            throw new NoVideoLoadedException();
+            throw new NoMediaLoadedException();
         }
     }
 
@@ -89,9 +89,9 @@ public final class MpvPlayer implements VideoPlayer {
         ipcClient.command("loadfile", filePath);
     }
 
-    private void ensureVideoLoaded() {
+    private void ensureMediaLoaded() {
         if (ipcClient.getProperty("idle-active", Boolean.class)) {
-            throw new NoVideoLoadedException();
+            throw new NoMediaLoadedException();
         }
     }
 

@@ -12,7 +12,7 @@ class PlayerRuntimeTest {
 
     @Test
     void ownedProcessExitRunsShutdownStepsAndReleasesWaiters() throws Exception {
-        VideoPlayer player = mock(VideoPlayer.class);
+        MediaPlayer player = mock(MediaPlayer.class);
         Process ownedProcess = mock(Process.class);
         Runnable shutdownStep = mock(Runnable.class);
         CompletableFuture<Process> processExit = new CompletableFuture<>();
@@ -28,7 +28,7 @@ class PlayerRuntimeTest {
 
     @Test
     void closeRunsShutdownStepsBeforeDestroyingOwnedProcess() {
-        VideoPlayer player = mock(VideoPlayer.class);
+        MediaPlayer player = mock(MediaPlayer.class);
         Process ownedProcess = mock(Process.class);
         Runnable shutdownStep = mock(Runnable.class);
         when(ownedProcess.onExit()).thenReturn(new CompletableFuture<>());
@@ -45,7 +45,7 @@ class PlayerRuntimeTest {
 
     @Test
     void shutdownStepsRunOnlyOnce() {
-        VideoPlayer player = mock(VideoPlayer.class);
+        MediaPlayer player = mock(MediaPlayer.class);
         Process ownedProcess = mock(Process.class);
         Runnable shutdownStep = mock(Runnable.class);
         when(ownedProcess.onExit()).thenReturn(new CompletableFuture<>());

@@ -1,6 +1,6 @@
 # SyncNuke Desktop
 
-SyncNuke Desktop connects a local video player to a SyncNuke synchronization server. It translates synchronized playback state into player commands while keeping player-specific integrations separate from the synchronization core.
+SyncNuke Desktop connects a local media player to a SyncNuke synchronization server. It translates synchronized playback state into player commands while keeping player-specific integrations separate from the synchronization core.
 
 MPV is currently the only supported player, more to come in the future.
 
@@ -95,7 +95,7 @@ scripts\mpv\start.bat ^
 | `--password <password>` | Room password | Optional              |
 | `--file <path>` | Media file to load after connecting | Optional              |
 | `--protocol <protocol>` | Synchronization protocol: `datasaver`, etc. | `datasaver`           |
-| `--player <name>` | Video player provider | Optional              |
+| `--player <name>` | Media player provider | Optional              |
 | `--player-host <host>` | Player IPC socket, named pipe, or network endpoint | Optional              |
 | `--player-executable <path>` | Player executable or containing directory | Optional              |
 | `--polling-rate <milliseconds>` | Player polling interval | Optional              |

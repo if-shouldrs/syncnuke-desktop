@@ -34,7 +34,7 @@ public final class PlayerCli {
     }
 
     private static String selectPlayer(BufferedReader input, PrintStream output) throws IOException {
-        output.println("Select a video player:");
+        output.println("Select a media player:");
         output.println("1) MPV");
         output.print("Selection: ");
         output.flush();
@@ -54,7 +54,7 @@ public final class PlayerCli {
         if ("mpv".equals(player.toLowerCase(Locale.ROOT))) {
             return new MpvCli(input, output);
         }
-        throw new IllegalArgumentException("Unsupported video player: " + player);
+        throw new IllegalArgumentException("Unsupported media player: " + player);
     }
 
     private static boolean isEmpty(String value) {

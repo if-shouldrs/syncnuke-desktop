@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 final class Environment {
-    // Video Player Settings
+    // Media Player Settings
     private String player;
     private String playerHost;
     private String playerExecutable;
